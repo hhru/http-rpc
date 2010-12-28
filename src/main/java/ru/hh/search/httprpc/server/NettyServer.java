@@ -15,25 +15,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.ServerMethod;
 
-public class Server extends AbstractService {
+public class NettyServer extends AbstractService {
   
-  public static final Logger logger = LoggerFactory.getLogger(Server.class);
+  public static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
   
-  final ServerBootstrap bootstrap;
-  final ChannelFactory factory;
-  final ChannelGroup allChannels;
-  final ConcurrentMap<String, ServerMethod> methods = new ConcurrentHashMap<String, ServerMethod>();
+  private final ServerBootstrap bootstrap;
+  private final ChannelFactory factory;
+  private final ChannelGroup allChannels;
+  private final ConcurrentMap<String, ServerMethod> methods = new ConcurrentHashMap<String, ServerMethod>();
 
   /**
    * @param options {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)}
    */
-  public Server(Map<String, Object> options) {
+  public NettyServer(Map<String, Object> options) {
     // TODO thread pool options
     factory = new NioServerSocketChannelFactory(
                         Executors.newCachedThreadPool(),
                         Executors.newCachedThreadPool());
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setOptions(options);
+    // TODO pipeline factory
     allChannels = new DefaultChannelGroup();
   }
 
