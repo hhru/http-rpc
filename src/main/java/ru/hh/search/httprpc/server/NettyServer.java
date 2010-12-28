@@ -44,21 +44,28 @@ public class NettyServer extends AbstractService {
     try {
       Channel channel = bootstrap.bind();
       allChannels.add(channel); // TODO add clients' channels
+      logger.info("started");
       notifyStarted();
     } catch (RuntimeException e){
       logger.error("can't start", e);
       notifyFailed(e);
       throw e;
     }
-    logger.info("started");
   }
 
   @Override
   protected void doStop() {
     logger.debug("stopping");
-    allChannels.close().awaitUninterruptibly();
-    factory.releaseExternalResources();
-    logger.info("stopped");
+    try {
+      allChannels.close().awaitUninterruptibly();
+      factory.releaseExternalResources();
+      logger.info("stopped");
+      notifyStopped();
+    } catch (RuntimeException e) {
+      logger.error("can't stop", e);
+      notifyFailed(e);
+      throw e;
+    }
   }
   
   public void register(ServerMethod method) {
