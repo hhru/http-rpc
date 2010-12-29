@@ -21,7 +21,7 @@ public class NettyServer extends AbstractService {
   
   private final ServerBootstrap bootstrap;
   private final ChannelFactory factory;
-  private final ChannelGroup allChannels;
+  private final ChannelGroup allChannels = new DefaultChannelGroup();
   private final ConcurrentMap<String, ServerMethod> methods = new ConcurrentHashMap<String, ServerMethod>();
 
   /**
@@ -35,7 +35,6 @@ public class NettyServer extends AbstractService {
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setOptions(options);
     // TODO pipeline factory
-    allChannels = new DefaultChannelGroup();
   }
 
   @Override
