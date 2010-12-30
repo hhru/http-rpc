@@ -20,7 +20,6 @@ public class NettyServer extends AbstractService {
   public static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
   
   private final ServerBootstrap bootstrap;
-  private final ChannelFactory factory;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
   private final ConcurrentMap<String, ServerMethod> methods = new ConcurrentHashMap<String, ServerMethod>();
 
@@ -29,9 +28,9 @@ public class NettyServer extends AbstractService {
    */
   public NettyServer(Map<String, Object> options) {
     // TODO thread pool options
-    factory = new NioServerSocketChannelFactory(
-                        Executors.newCachedThreadPool(),
-                        Executors.newCachedThreadPool());
+    ChannelFactory factory = new NioServerSocketChannelFactory(
+      Executors.newCachedThreadPool(),
+      Executors.newCachedThreadPool());
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setOptions(options);
     // TODO pipeline factory
@@ -57,7 +56,7 @@ public class NettyServer extends AbstractService {
     logger.debug("stopping");
     try {
       allChannels.close().awaitUninterruptibly();
-      factory.releaseExternalResources();
+      bootstrap.releaseExternalResources();
       logger.info("stopped");
       notifyStopped();
     } catch (RuntimeException e) {
