@@ -13,6 +13,7 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
@@ -64,6 +65,13 @@ public class NettyServer extends AbstractService {
   }
   
   private class RequestHandler extends SimpleChannelUpstreamHandler {
+
+    @Override
+    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+      allChannels.add(e.getChannel());
+      ctx.sendUpstream(e);
+    }
+
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
       HttpRequest request = (HttpRequest) e.getMessage();
@@ -85,7 +93,7 @@ public class NettyServer extends AbstractService {
     logger.debug("starting");
     try {
       Channel channel = bootstrap.bind();
-      allChannels.add(channel); // TODO add clients' channels
+      allChannels.add(channel);
       logger.info("started");
       notifyStarted();
     } catch (RuntimeException e){
