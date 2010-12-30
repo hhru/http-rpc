@@ -34,7 +34,7 @@ public class RequestReplyTest {
   @Test
   public void test() throws ExecutionException, InterruptedException {
     String argument = "hello!";
-    assertEquals(client.call(method.getUri(), null, argument).get(), method.call(null, argument));
+    assertEquals(client.call(method.getPath(), null, argument).get(), method.call(null, argument));
   }
   
   @AfterClass

@@ -111,6 +111,6 @@ public class NettyServer extends AbstractService {
   }
   
   public void register(ServerMethod method) {
-    methods.put(method.getUri(), method);
+    methods.put(method.getPath(), method);
   }
 }

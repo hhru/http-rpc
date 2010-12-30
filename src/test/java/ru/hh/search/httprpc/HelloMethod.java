@@ -4,7 +4,7 @@ import java.util.Map;
 
 public class HelloMethod implements ServerMethod<String, String> {
   
-  public String getUri() {
+  public String getPath() {
     return "/helloMethod";
   }
 
