@@ -1,8 +1,8 @@
 package ru.hh.search.httprpc;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 public interface Client {
-  <R, A> Future<R> call(String methodName, Map<String, String> envelope, A argument); 
+  <O, I> ListenableFuture<O> call(String uri, Map<String, String> envelope, I argument); 
 }
