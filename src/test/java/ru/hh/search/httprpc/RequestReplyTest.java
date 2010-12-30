@@ -18,6 +18,7 @@ public class RequestReplyTest {
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", new InetSocketAddress(12345));
     server = new NettyServer(serverOptions);
+    server.register(new HelloMethod());
     server.startAndWait();
     
     Map<String, Object> clientOptions = new HashMap<String, Object>();
