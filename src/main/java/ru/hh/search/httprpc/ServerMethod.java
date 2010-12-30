@@ -2,7 +2,7 @@ package ru.hh.search.httprpc;
 
 import java.util.Map;
 
-public interface ServerMethod<R, A> {
+public interface ServerMethod<O, I> {
   String getPath();
-  R call(Map<String, String> envelope, A argument);
+  O call(Map<String, String> envelope, I argument);
 }
