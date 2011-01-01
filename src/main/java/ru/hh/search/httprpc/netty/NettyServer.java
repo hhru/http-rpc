@@ -60,6 +60,7 @@ public class NettyServer extends AbstractService {
       public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = pipeline();
         pipeline.addLast("decoder", new HttpRequestDecoder());
+        // TODO get rid of chunks
         pipeline.addLast("aggregator", new HttpChunkAggregator(Integer.MAX_VALUE));
         pipeline.addLast("encoder", new HttpResponseEncoder());
         pipeline.addLast("handler", new RequestHandler());
@@ -81,7 +82,7 @@ public class NettyServer extends AbstractService {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
       HttpRequest request = (HttpRequest) event.getMessage();
       // TODO: no method??
-      // TODO: parse parameters, use path instead of whole uri
+      // TODO: parse parameters to extract envelope, use path instead of whole uri
       ServerMethod method = methods.get(request.getUri());
       @SuppressWarnings({"unchecked"}) 
       Object result = method.call(null, serializer.fromInputStream(new ChannelBufferInputStream(request.getContent()), 
