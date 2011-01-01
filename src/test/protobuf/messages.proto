@@ -1,0 +1,11 @@
+package hh.search.httprpc;
+
+option java_package = "ru.hh.search.httprpc";
+
+message Request {
+  required string request = 1;
+}
+
+message Reply {
+  required string reply = 1;
+}
