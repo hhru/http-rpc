@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -82,7 +83,8 @@ public class NettyServer extends AbstractService {
       // TODO: parse parameters
       ServerMethod method = methods.get(request.getUri());
       @SuppressWarnings({"unchecked"}) 
-      Object result = method.call(null, serializer.fromBytes(request.getContent().array(), method.getInputClass()));
+      Object result = method.call(null, serializer.fromInputStream(new ChannelBufferInputStream(request.getContent()), 
+        method.getInputClass()));
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       response.setContent(ChannelBuffers.wrappedBuffer(serializer.toBytes(result)));
       response.setHeader(CONTENT_TYPE, serializer.getContentType());

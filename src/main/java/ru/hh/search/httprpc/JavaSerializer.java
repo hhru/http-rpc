@@ -4,6 +4,7 @@ import com.google.common.base.Throwables;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -27,8 +28,13 @@ public class JavaSerializer implements Serializer {
 
   @Override
   public <T> T fromBytes(byte[] bytes, Class<T> klass) {
+    return fromInputStream(new ByteArrayInputStream(bytes), klass);
+  }
+
+  @Override
+  public <T> T fromInputStream(InputStream stream, Class<T> klass) {
     try {
-      ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
+      ObjectInputStream ois = new ObjectInputStream(stream);
       @SuppressWarnings("unchecked")
       T v = (T) ois.readObject();
       return v;
