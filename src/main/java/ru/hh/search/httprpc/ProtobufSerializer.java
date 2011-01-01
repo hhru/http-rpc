@@ -2,8 +2,6 @@ package ru.hh.search.httprpc;
 
 import com.google.common.base.Throwables;
 import com.google.protobuf.Message;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 
