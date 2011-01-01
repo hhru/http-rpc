@@ -47,6 +47,7 @@ public class NettyClient  extends AbstractService implements Client {
 
   public NettyClient(Map<String, Object> options, Serializer serializer) {
     this.serializer = serializer;
+    // TODO thread pool settings
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
     bootstrap = new ClientBootstrap(factory);
     bootstrap.setOptions(options);
@@ -55,6 +56,7 @@ public class NettyClient  extends AbstractService implements Client {
       public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
         pipeline.addLast("codec", new HttpClientCodec());
+        // TODO get rid of chunks
         pipeline.addLast("aggregator", new HttpChunkAggregator(Integer.MAX_VALUE));
         return pipeline;
       }
@@ -63,7 +65,7 @@ public class NettyClient  extends AbstractService implements Client {
 
   @Override
   protected void doStart() {
-    // nothing to do
+    // TODO nothing to do, get rid of client.start()
     notifyStarted();
   }
 
@@ -81,7 +83,7 @@ public class NettyClient  extends AbstractService implements Client {
     }
   }
 
-  public <O, I> ListenableFuture<O> call(final String path, final Map<String, String> envelope, final I input, 
+  public <O, I> ListenableFuture<O> call(final String path, final Map<String, String> envelope, final I input,
                                          final Class<O> outputClass) {
     final ClientHandler<O> handler = new ClientHandler<O>(outputClass);
     ChannelFuture connectFuture = bootstrap.connect();
@@ -98,11 +100,13 @@ public class NettyClient  extends AbstractService implements Client {
           request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
           request.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
           request.setContent(ChannelBuffers.wrappedBuffer(bytes));
-            // TODO "accept" header
-            // TODO: use envelope
-            channel.write(request);
+          // TODO "accept" header
+          // TODO: use envelope
+          // TODO handle write failure
+          channel.write(request);
         } else {
           logger.error("connection failed", future.getCause());
+          future.setFailure(future.getCause());
         }
       }
     });
@@ -111,6 +115,7 @@ public class NettyClient  extends AbstractService implements Client {
 
   private class ClientHandler<O> extends SimpleChannelUpstreamHandler {
     
+    // TODO request cancellation
     private final ValueFuture<O> future = ValueFuture.create();
     private final Class<O> outputClass;
 
@@ -121,6 +126,7 @@ public class NettyClient  extends AbstractService implements Client {
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
       HttpResponse response = (HttpResponse) e.getMessage();
+      // TODO handle remote exceptions
       if (response.getStatus().getCode() == 200) {
         ChannelBuffer content = response.getContent();
         if (content.readable()) {
