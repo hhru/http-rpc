@@ -8,7 +8,9 @@ public class SerializerTest {
   @DataProvider(name = "serializers")
   public Object[][] serializers() {
     return new Object[][] {
-      {new JavaSerializer(), new Object[] {"hello"}}
+      {new JavaSerializer(), new Object[] {"hello"}},
+      {new ProtobufSerializer(), new Object[] {Messages.Request.newBuilder().setRequest("hello").build(), 
+        Messages.Reply.newBuilder().setReply("world").build()}}
     };
   }
   
