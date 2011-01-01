@@ -85,6 +85,7 @@ public class NettyClient  extends AbstractService implements Client {
           // TODO serialize argument
           request.setContent(ChannelBuffers.copiedBuffer(input.toString(), CharsetUtil.UTF_8));
           request.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
+          // TODO "accept" header
           // TODO: use envelope
           channel.write(request);
         } else {
