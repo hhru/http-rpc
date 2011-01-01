@@ -15,7 +15,8 @@ public class RequestReplyTest {
   @DataProvider(name = "methods")
   public Object[][] methods() {
     return new Object[][] {
-      {new JavaSerializer(), new HelloMethod(), "hello"}
+      {new JavaSerializer(), new JavaMethod(), "hello"},
+      {new ProtobufSerializer(), new ProtobufMethod(), Messages.Request.newBuilder().setRequest("hello").build()}
     };
   }
   
