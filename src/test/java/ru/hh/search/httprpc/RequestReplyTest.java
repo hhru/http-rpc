@@ -33,7 +33,9 @@ public class RequestReplyTest {
     NettyClient client = new NettyClient(clientOptions, serializer);
     client.startAndWait();
 
-    assertEquals(client.call(method.getPath(), null, argument, method.getInputClass()).get(), method.call(null, argument));
+    Object local = method.call(null, argument);
+    Object remote = client.call(method.getPath(), null, argument, local.getClass()).get();
+    assertEquals(remote, local);
 
     client.stopAndWait();
     server.stopAndWait();
