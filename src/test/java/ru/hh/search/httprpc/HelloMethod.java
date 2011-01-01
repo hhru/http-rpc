@@ -8,6 +8,11 @@ public class HelloMethod implements ServerMethod<String, String> {
     return "/helloMethod";
   }
 
+  @Override
+  public Class<String> getInputClass() {
+    return String.class;
+  }
+  
   public String call(Map<String, String> envelope, String argument) {
     return "World!";
   }

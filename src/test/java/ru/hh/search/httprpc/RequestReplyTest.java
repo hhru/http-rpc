@@ -18,16 +18,18 @@ public class RequestReplyTest {
 
   @BeforeClass
   public void setUp() {
+    Serializer serializer = new JavaSerializer();
+    
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", new InetSocketAddress(12345));
-    server = new NettyServer(serverOptions);
+    server = new NettyServer(serverOptions, serializer);
     method = new HelloMethod();
     server.register(method);
     server.startAndWait();
     
     Map<String, Object> clientOptions = new HashMap<String, Object>();
     clientOptions.put("remoteAddress", new InetSocketAddress(12345));
-    client = new NettyClient(clientOptions);
+    client = new NettyClient(clientOptions, serializer);
     client.startAndWait();
   }
   

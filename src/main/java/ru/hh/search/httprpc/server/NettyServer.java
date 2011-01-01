@@ -25,9 +25,9 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
-import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.search.httprpc.Serializer;
 import ru.hh.search.httprpc.ServerMethod;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
@@ -38,6 +38,8 @@ public class NettyServer extends AbstractService {
   
   public static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
   
+  private final Serializer serializer;
+  
   private final ServerBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
   private final ConcurrentMap<String, ServerMethod> methods = new ConcurrentHashMap<String, ServerMethod>();
@@ -45,7 +47,7 @@ public class NettyServer extends AbstractService {
   /**
    * @param options {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)}
    */
-  public NettyServer(Map<String, Object> options) {
+  public NettyServer(Map<String, Object> options, Serializer serializer) {
     // TODO thread pool options
     ChannelFactory factory = new NioServerSocketChannelFactory(
       Executors.newCachedThreadPool(),
@@ -62,6 +64,7 @@ public class NettyServer extends AbstractService {
         return pipeline;
       }
     });
+    this.serializer = serializer;
   }
   
   private class RequestHandler extends SimpleChannelUpstreamHandler {
@@ -73,18 +76,18 @@ public class NettyServer extends AbstractService {
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-      HttpRequest request = (HttpRequest) e.getMessage();
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
+      HttpRequest request = (HttpRequest) event.getMessage();
       // TODO: no method??
       // TODO: parse parameters
       ServerMethod method = methods.get(request.getUri());
-      // TODO: unserialize request
-      // TODO: method types
-      String result = ((ServerMethod<String, String>)method).call(null, request.getContent().toString(CharsetUtil.UTF_8));
+      @SuppressWarnings({"unchecked"}) 
+      Object result = method.call(null, serializer.fromBytes(request.getContent().array(), method.getInputClass()));
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-      response.setContent(ChannelBuffers.copiedBuffer(result, CharsetUtil.UTF_8));
-      response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
-      e.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
+      response.setContent(ChannelBuffers.wrappedBuffer(serializer.toBytes(result)));
+      response.setHeader(CONTENT_TYPE, serializer.getContentType());
+      // TODO: content length
+      event.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
     }
   }
 

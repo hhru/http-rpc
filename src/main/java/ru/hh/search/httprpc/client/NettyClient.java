@@ -23,19 +23,22 @@ import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Client;
+import ru.hh.search.httprpc.Serializer;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 
 public class NettyClient  extends AbstractService implements Client {
   public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
   
+  private final Serializer serializer;
+  
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
 
-  public NettyClient(Map<String, Object> options) {
+  public NettyClient(Map<String, Object> options, Serializer serializer) {
+    this.serializer = serializer;
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
     bootstrap = new ClientBootstrap(factory);
     bootstrap.setOptions(options);
@@ -82,9 +85,9 @@ public class NettyClient  extends AbstractService implements Client {
           channel.getPipeline().addLast("handler", handler);
           HttpRequest request = new DefaultHttpRequest(
                   HttpVersion.HTTP_1_1, HttpMethod.POST, new URI(path).toASCIIString());
-          // TODO serialize argument
-          request.setContent(ChannelBuffers.copiedBuffer(input.toString(), CharsetUtil.UTF_8));
-          request.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
+          request.setContent(ChannelBuffers.wrappedBuffer(serializer.toBytes(input)));
+          request.setHeader(CONTENT_TYPE, serializer.getContentType());
+          // TODO content-length header
           // TODO "accept" header
           // TODO: use envelope
           channel.write(request);
