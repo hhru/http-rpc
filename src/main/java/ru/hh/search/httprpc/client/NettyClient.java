@@ -2,18 +2,24 @@ package ru.hh.search.httprpc.client;
 
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ValueFuture;
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
@@ -22,6 +28,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +82,7 @@ public class NettyClient  extends AbstractService implements Client {
 
   public <O, I> ListenableFuture<O> call(final String path, final Map<String, String> envelope, final I input, 
                                          final Class<O> outputClass) {
-    final ClientHandler<O> handler = new ClientHandler<O>();
+    final ClientHandler<O> handler = new ClientHandler<O>(outputClass);
     ChannelFuture connectFuture = bootstrap.connect();
     connectFuture.addListener(new ChannelFutureListener() {
       public void operationComplete(ChannelFuture future) throws Exception {
@@ -97,5 +104,30 @@ public class NettyClient  extends AbstractService implements Client {
       }
     });
     return handler.getFuture();
+  }
+
+  private class ClientHandler<O> extends SimpleChannelUpstreamHandler {
+    
+    private final ValueFuture<O> future = ValueFuture.create();
+    private final Class<O> outputClass;
+
+    public ClientHandler(Class<O> outputClass) {
+      this.outputClass = outputClass;
+    }
+
+    @Override
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+      HttpResponse response = (HttpResponse) e.getMessage();
+      if (response.getStatus().getCode() == 200) {
+        ChannelBuffer content = response.getContent();
+        if (content.readable()) {
+          future.set(serializer.fromInputStream(new ChannelBufferInputStream(content), outputClass));
+        }
+      }
+    }
+  
+    public ListenableFuture<O> getFuture() {
+      return future;
+    }
   }
 }
