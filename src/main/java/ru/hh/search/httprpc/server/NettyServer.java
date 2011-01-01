@@ -81,7 +81,7 @@ public class NettyServer extends AbstractService {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
       HttpRequest request = (HttpRequest) event.getMessage();
       // TODO: no method??
-      // TODO: parse parameters
+      // TODO: parse parameters, use path instead of whole uri
       ServerMethod method = methods.get(request.getUri());
       @SuppressWarnings({"unchecked"}) 
       Object result = method.call(null, serializer.fromInputStream(new ChannelBufferInputStream(request.getContent()), 
