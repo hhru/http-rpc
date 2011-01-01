@@ -1,4 +1,4 @@
-package ru.hh.search.httprpc.client;
+package ru.hh.search.httprpc.netty;
 
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;

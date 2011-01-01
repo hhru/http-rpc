@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import ru.hh.search.httprpc.client.NettyClient;
-import ru.hh.search.httprpc.server.NettyServer;
+import ru.hh.search.httprpc.netty.NettyClient;
+import ru.hh.search.httprpc.netty.NettyServer;
 import static org.testng.Assert.assertEquals;
 
 public class RequestReplyTest {

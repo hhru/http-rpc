@@ -1,4 +1,4 @@
-package ru.hh.search.httprpc.server;
+package ru.hh.search.httprpc.netty;
 
 import com.google.common.util.concurrent.AbstractService;
 import java.util.Map;
