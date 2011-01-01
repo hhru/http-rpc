@@ -18,6 +18,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
@@ -126,6 +127,12 @@ public class NettyClient  extends AbstractService implements Client {
       }
     }
   
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+      logger.error("client got exception, closing channel", e.getCause());
+      e.getChannel().close();
+    }
+
     public ListenableFuture<O> getFuture() {
       return future;
     }
