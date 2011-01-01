@@ -17,7 +17,7 @@ public class ProtobufSerializer implements Serializer {
       // TODO: don't use reflection
       Method newBuilder = klass.getMethod("newBuilder");
       Message.Builder builder = (Message.Builder) newBuilder.invoke(null);
-      return (T) builder.mergeFrom(stream);
+      return (T) builder.mergeFrom(stream).build();
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
@@ -34,7 +34,7 @@ public class ProtobufSerializer implements Serializer {
       // TODO: don't use reflection
       Method newBuilder = klass.getMethod("newBuilder");
       Message.Builder builder = (Message.Builder) newBuilder.invoke(null);
-      return (T) builder.mergeFrom(bytes);
+      return (T) builder.mergeFrom(bytes).build();
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
