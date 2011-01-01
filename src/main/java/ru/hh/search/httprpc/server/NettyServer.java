@@ -23,6 +23,7 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -32,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Serializer;
 import ru.hh.search.httprpc.ServerMethod;
 import static org.jboss.netty.channel.Channels.pipeline;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -87,9 +87,10 @@ public class NettyServer extends AbstractService {
       Object result = method.call(null, serializer.fromInputStream(new ChannelBufferInputStream(request.getContent()), 
         method.getInputClass()));
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-      response.setContent(ChannelBuffers.wrappedBuffer(serializer.toBytes(result)));
-      response.setHeader(CONTENT_TYPE, serializer.getContentType());
-      // TODO: content length
+      byte[] bytes = serializer.toBytes(result);
+      response.setHeader(HttpHeaders.Names.CONTENT_TYPE, serializer.getContentType());
+      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
+      response.setContent(ChannelBuffers.wrappedBuffer(bytes));
       event.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
     }
 

@@ -27,6 +27,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -35,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Client;
 import ru.hh.search.httprpc.Serializer;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 
 public class NettyClient  extends AbstractService implements Client {
   public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
@@ -93,12 +93,14 @@ public class NettyClient  extends AbstractService implements Client {
           channel.getPipeline().addLast("handler", handler);
           HttpRequest request = new DefaultHttpRequest(
                   HttpVersion.HTTP_1_1, HttpMethod.POST, new URI(path).toASCIIString());
-          request.setContent(ChannelBuffers.wrappedBuffer(serializer.toBytes(input)));
-          request.setHeader(CONTENT_TYPE, serializer.getContentType());
-          // TODO content-length header
-          // TODO "accept" header
-          // TODO: use envelope
-          channel.write(request);
+          byte[] bytes = serializer.toBytes(input);
+          request.setHeader(HttpHeaders.Names.CONTENT_TYPE, serializer.getContentType());
+          request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
+          request.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
+          request.setContent(ChannelBuffers.wrappedBuffer(bytes));
+            // TODO "accept" header
+            // TODO: use envelope
+            channel.write(request);
         } else {
           logger.error("connection failed", future.getCause());
         }
