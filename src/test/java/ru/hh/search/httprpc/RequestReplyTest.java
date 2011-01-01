@@ -33,7 +33,7 @@ public class RequestReplyTest {
     NettyClient client = new NettyClient(clientOptions, serializer);
     client.startAndWait();
 
-    assertEquals(client.call(method.getPath(), null, argument, String.class).get(), method.call(null, argument));
+    assertEquals(client.call(method.getPath(), null, argument, method.getInputClass()).get(), method.call(null, argument));
 
     client.stopAndWait();
     server.stopAndWait();
