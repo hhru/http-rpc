@@ -70,7 +70,8 @@ public class NettyClient  extends AbstractService implements Client {
     }
   }
 
-  public <O, I> ListenableFuture<O> call(final String path, final Map<String, String> envelope, final I argument) {
+  public <O, I> ListenableFuture<O> call(final String path, final Map<String, String> envelope, final I input, 
+                                         final Class<O> outputClass) {
     final ClientHandler<O> handler = new ClientHandler<O>();
     ChannelFuture connectFuture = bootstrap.connect();
     connectFuture.addListener(new ChannelFutureListener() {
@@ -82,7 +83,7 @@ public class NettyClient  extends AbstractService implements Client {
           HttpRequest request = new DefaultHttpRequest(
                   HttpVersion.HTTP_1_1, HttpMethod.POST, new URI(path).toASCIIString());
           // TODO serialize argument
-          request.setContent(ChannelBuffers.copiedBuffer(argument.toString(), CharsetUtil.UTF_8));
+          request.setContent(ChannelBuffers.copiedBuffer(input.toString(), CharsetUtil.UTF_8));
           request.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
           // TODO: use envelope
           channel.write(request);
