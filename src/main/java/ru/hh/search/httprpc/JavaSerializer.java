@@ -17,7 +17,7 @@ public class JavaSerializer implements Serializer {
   @Override
   public <T> byte[] toBytes(T object) {
     try {
-      ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
       ObjectOutputStream oos = new ObjectOutputStream(baos);
       oos.writeObject(object);
       return baos.toByteArray();
