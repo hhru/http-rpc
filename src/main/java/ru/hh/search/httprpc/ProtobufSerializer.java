@@ -27,13 +27,7 @@ public class ProtobufSerializer implements Serializer {
 
   @Override
   public <T> byte[] toBytes(T object) {
-    try {
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      ((Message)object).writeTo(baos);
-      return baos.toByteArray();
-    } catch (IOException e) {
-      throw Throwables.propagate(e);
-    }
+      return ((Message)object).toByteArray();
   }
 
   @Override
