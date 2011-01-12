@@ -158,6 +158,8 @@ public class NettyClient  extends AbstractService implements Client {
         future.setException(e.getCause());
         e.getChannel().close();
       }
+      
+      // TODO: handle channelClosed
   
       public ListenableFuture<O> getFuture() {
         return future;

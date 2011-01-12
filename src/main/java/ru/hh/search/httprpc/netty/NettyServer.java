@@ -85,6 +85,7 @@ public class NettyServer extends AbstractService {
       // TODO: no method??
       // TODO: parse parameters to extract envelope, use path instead of whole uri
       ServerMethod method = methods.get(request.getUri());
+      // TODO move outside IO thread pool
       @SuppressWarnings({"unchecked"}) 
       Object result = method.call(null, serializer.fromInputStream(new ChannelBufferInputStream(request.getContent()), 
         method.getInputClass()));
