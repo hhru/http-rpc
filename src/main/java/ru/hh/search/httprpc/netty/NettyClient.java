@@ -64,6 +64,7 @@ public class NettyClient  extends AbstractService implements Client {
         return pipeline;
       }
     });
+    start();
   }
 
   @Override

@@ -31,11 +31,9 @@ public class RequestReplyTest {
     server.register(path, serverMethod);
     server.startAndWait();
 
-    NettyClient client = new NettyClient(new HashMap<String, Object>(), serializer);
-    client.startAndWait(); // TODO move to constructor
-    
     Object local = serverMethod.call(null, argument);
     
+    NettyClient client = new NettyClient(new HashMap<String, Object>(), serializer);
     ClientMethod clientMethod = client.createMethod(path, local.getClass());
     Object remote = clientMethod.call(address, null, argument).get();
     
