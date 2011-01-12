@@ -21,20 +21,24 @@ public class RequestReplyTest {
   }
   
   @Test(dataProvider = "methods")
-  public void test(Serializer serializer, ServerMethod method, Object argument) throws ExecutionException, InterruptedException {
+  public void test(Serializer serializer, ServerMethod serverMethod, Object argument) throws ExecutionException, InterruptedException {
+    InetSocketAddress address = new InetSocketAddress(12345);
+    String path = "/helloMethod";
+    
     Map<String, Object> serverOptions = new HashMap<String, Object>();
-    serverOptions.put("localAddress", new InetSocketAddress(12345));
+    serverOptions.put("localAddress", address);
     NettyServer server = new NettyServer(serverOptions, serializer);
-    server.register(method);
+    server.register(path, serverMethod);
     server.startAndWait();
 
-    Map<String, Object> clientOptions = new HashMap<String, Object>();
-    clientOptions.put("remoteAddress", new InetSocketAddress(12345));
-    NettyClient client = new NettyClient(clientOptions, serializer);
-    client.startAndWait();
-
-    Object local = method.call(null, argument);
-    Object remote = client.call(method.getPath(), null, argument, local.getClass()).get();
+    NettyClient client = new NettyClient(new HashMap<String, Object>(), serializer);
+    client.startAndWait(); // TODO move to constructor
+    
+    Object local = serverMethod.call(null, argument);
+    
+    ClientMethod clientMethod = client.createMethod(path, local.getClass());
+    Object remote = clientMethod.call(address, null, argument).get();
+    
     assertEquals(remote, local);
 
     client.stopAndWait();
