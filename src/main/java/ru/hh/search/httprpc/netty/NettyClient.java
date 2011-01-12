@@ -70,7 +70,6 @@ public class NettyClient  extends AbstractService implements Client {
 
   @Override
   protected void doStart() {
-    // TODO nothing to do, get rid of client.start()
     notifyStarted();
   }
 
