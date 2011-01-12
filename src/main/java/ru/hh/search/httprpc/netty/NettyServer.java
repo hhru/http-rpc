@@ -41,15 +41,15 @@ public class NettyServer extends AbstractService {
   public static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
   
   private final Serializer serializer;
-  
   private final ServerBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
   private final ConcurrentMap<String, ServerMethod> methods = new ConcurrentHashMap<String, ServerMethod>();
+  private final String basePath;
 
   /**
    * @param options {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)}
    */
-  public NettyServer(Map<String, Object> options, Serializer serializer) {
+  public NettyServer(Map<String, Object> options, Serializer serializer, String basePath) {
     // TODO thread pool options
     ChannelFactory factory = new NioServerSocketChannelFactory(
       Executors.newCachedThreadPool(),
@@ -68,6 +68,7 @@ public class NettyServer extends AbstractService {
       }
     });
     this.serializer = serializer;
+    this.basePath = basePath;
   }
   
   private class RequestHandler extends SimpleChannelUpstreamHandler {
@@ -133,6 +134,6 @@ public class NettyServer extends AbstractService {
   }
   
   public void register(String path, ServerMethod method) {
-    methods.put(path, method);
+    methods.put(basePath + path, method);
   }
 }

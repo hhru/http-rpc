@@ -23,17 +23,18 @@ public class RequestReplyTest {
   @Test(dataProvider = "methods")
   public void test(Serializer serializer, ServerMethod serverMethod, Object argument) throws ExecutionException, InterruptedException {
     InetSocketAddress address = new InetSocketAddress(12345);
+    String basePath = null;
     String path = "/helloMethod";
     
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", address);
-    NettyServer server = new NettyServer(serverOptions, serializer);
+    NettyServer server = new NettyServer(serverOptions, serializer, basePath);
     server.register(path, serverMethod);
     server.startAndWait();
 
     Object local = serverMethod.call(null, argument);
     
-    NettyClient client = new NettyClient(new HashMap<String, Object>(), serializer);
+    NettyClient client = new NettyClient(new HashMap<String, Object>(), serializer, basePath);
     ClientMethod clientMethod = client.createMethod(path, local.getClass());
     Object remote = clientMethod.call(address, null, argument).get();
     

@@ -44,12 +44,13 @@ public class NettyClient  extends AbstractService implements Client {
   public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
   
   private final Serializer serializer;
-  
+  private final String basePath;
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
 
-  public NettyClient(Map<String, Object> options, Serializer serializer) {
+  public NettyClient(Map<String, Object> options, Serializer serializer, String basePath) {
     this.serializer = serializer;
+    this.basePath = basePath;
     // TODO thread pool settings
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
     bootstrap = new ClientBootstrap(factory);
@@ -89,15 +90,15 @@ public class NettyClient  extends AbstractService implements Client {
 
   @Override
   public <O, I> ClientMethod<O, I> createMethod(String path, Class<O> outputClass) {
-    return new NettyClientMethod<O, I>(path, outputClass);
+    return new NettyClientMethod<O, I>(basePath + path, outputClass);
   }
 
   private class NettyClientMethod<O, I> implements ClientMethod<O, I> {
-    final String path;
+    final String fullPath;
     final Class<O> outputClass;
 
-    private NettyClientMethod(String path, Class<O> outputClass) {
-      this.path = path;
+    private NettyClientMethod(String fullPath, Class<O> outputClass) {
+      this.fullPath = fullPath;
       this.outputClass = outputClass;
     }
 
@@ -112,7 +113,7 @@ public class NettyClient  extends AbstractService implements Client {
             allChannels.add(channel);
             channel.getPipeline().addLast("handler", handler);
             HttpRequest request = new DefaultHttpRequest(
-                    HttpVersion.HTTP_1_1, HttpMethod.POST, new URI(path).toASCIIString());
+                    HttpVersion.HTTP_1_1, HttpMethod.POST, new URI(fullPath).toASCIIString());
             byte[] bytes = serializer.toBytes(input);
             request.setHeader(HttpHeaders.Names.CONTENT_TYPE, serializer.getContentType());
             request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
