@@ -155,6 +155,7 @@ public class NettyClient  extends AbstractService implements Client {
       @Override
       public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
         logger.error("client got exception, closing channel", e.getCause());
+        future.setException(e.getCause());
         e.getChannel().close();
       }
   
