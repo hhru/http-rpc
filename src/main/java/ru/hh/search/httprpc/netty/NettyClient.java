@@ -18,6 +18,7 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -103,8 +104,8 @@ public class NettyClient  extends AbstractService implements Client {
 
     @Override
     public ListenableFuture<O> call(final InetSocketAddress address, final Envelope envelope, final I input) {
-      final ClientHandler<O> handler = new ClientHandler<O>(outputClass);
       ChannelFuture connectFuture = bootstrap.connect(address);
+      final ClientHandler<O> handler = new ClientHandler<O>(outputClass, connectFuture.getChannel());
       connectFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
@@ -132,11 +133,11 @@ public class NettyClient  extends AbstractService implements Client {
   
     private class ClientHandler<O> extends SimpleChannelUpstreamHandler {
       
-      // TODO request cancellation
-      private final ValueFuture<O> future = ValueFuture.create();
+      private final ClientFuture<O> future;
       private final Class<O> outputClass;
   
-      public ClientHandler(Class<O> outputClass) {
+      public ClientHandler(Class<O> outputClass, Channel channel) {
+        this.future = new ClientFuture<O>(channel);
         this.outputClass = outputClass;
       }
   
@@ -147,7 +148,9 @@ public class NettyClient  extends AbstractService implements Client {
         if (response.getStatus().getCode() == 200) {
           ChannelBuffer content = response.getContent();
           if (content.readable()) {
-            future.set(serializer.fromInputStream(new ChannelBufferInputStream(content), outputClass));
+            if (!future.set(serializer.fromInputStream(new ChannelBufferInputStream(content), outputClass))) {
+              logger.warn("server responce returned too late, future has been already cancelled");
+            }
           }
         }
       }
@@ -159,8 +162,14 @@ public class NettyClient  extends AbstractService implements Client {
         e.getChannel().close();
       }
       
-      // TODO: handle channelClosed
-  
+      // TODO: handle channelDisconnected??
+
+      @Override
+      public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        future.cancel(true);
+        super.channelClosed(ctx, e);
+      }
+
       public ListenableFuture<O> getFuture() {
         return future;
       }
