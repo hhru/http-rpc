@@ -6,15 +6,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import ru.hh.search.httprpc.netty.NettyClient;
 import ru.hh.search.httprpc.netty.NettyServer;
 import static org.testng.Assert.fail;
 
 public class CancelRequestTest {
+  @DataProvider(name = "times")
+  public Object[][] methods() {
+    return new Object[][] {
+      {0, 1000},
+      {1, 1000},
+      {100, 1000}
+    };
+  }
   
-  @Test(expectedExceptions = CancellationException.class) 
-  public void test() throws ExecutionException, InterruptedException {
+  @Test(expectedExceptions = CancellationException.class, dataProvider = "times") 
+  public void test(long clientTime, long serverTime) throws ExecutionException, InterruptedException {
     InetSocketAddress address = new InetSocketAddress(12346);
     String basePath = "/apiBase/";
     String path = "longMethod";
@@ -29,11 +38,18 @@ public class CancelRequestTest {
     NettyClient client = new NettyClient(new HashMap<String, Object>(), serializer, basePath);
     ClientMethod<Long, Object> clientMethod = client.createMethod(path, Long.class);
 
-    int sleepTime = 1000;
-    ListenableFuture<Long> result = clientMethod.call(address, null, sleepTime);
-    result.cancel(true);
+    try {
+      ListenableFuture<Long> result = clientMethod.call(address, null, serverTime);
+      if (clientTime > 0) {
+        Thread.sleep(clientTime);
+      }
+      result.cancel(true);
 
-    result.get();
-    fail();
+      result.get();
+      fail();
+    } finally {
+      client.stopAndWait();
+      server.stopAndWait();
+    }
   }
 }
