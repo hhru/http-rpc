@@ -2,9 +2,9 @@ package ru.hh.search.httprpc.netty;
 
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ValueFuture;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.channels.ClosedChannelException;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -156,10 +156,17 @@ public class NettyClient  extends AbstractService implements Client {
       }
     
       @Override
-      public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-        logger.error("client got exception, closing channel", e.getCause());
-        future.setException(e.getCause());
-        e.getChannel().close();
+      public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) throws Exception {
+        Throwable cause = event.getCause();
+        if (future.isCancelled() && cause instanceof ClosedChannelException) {
+          logger.debug("attempt to use closed channel after cancelling request", cause);
+        } else {
+          logger.error("client got exception, closing channel", cause);
+          if (future.setException(cause)) {
+            logger.warn("failed to set exception for future, cancelled: {}, done: {}", future.isCancelled(), future.isDone());
+          }
+          event.getChannel().close();
+        }
       }
       
       // TODO: handle channelDisconnected??

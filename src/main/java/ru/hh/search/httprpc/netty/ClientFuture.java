@@ -16,8 +16,9 @@ public class ClientFuture<V> extends AbstractListenableFuture<V> {
    */
   @Override
   public boolean cancel(boolean mayInterruptIfRunning) {
+    boolean result = cancel();
     channel.close();
-    return cancel();
+    return result;
   }
   
   @Override

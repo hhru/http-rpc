@@ -4,15 +4,16 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import org.testng.annotations.Test;
 import ru.hh.search.httprpc.netty.NettyClient;
 import ru.hh.search.httprpc.netty.NettyServer;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class CancelRequestTest {
   
-  @Test
+  @Test(expectedExceptions = CancellationException.class) 
   public void test() throws ExecutionException, InterruptedException {
     InetSocketAddress address = new InetSocketAddress(12346);
     String basePath = "/apiBase/";
@@ -31,7 +32,8 @@ public class CancelRequestTest {
     int sleepTime = 1000;
     ListenableFuture<Long> result = clientMethod.call(address, null, sleepTime);
     result.cancel(true);
-    
-    assertTrue(result.get() != sleepTime);
+
+    result.get();
+    fail();
   }
 }
