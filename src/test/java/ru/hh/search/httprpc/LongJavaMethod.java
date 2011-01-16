@@ -8,11 +8,6 @@ public class LongJavaMethod implements ServerMethod<Long, Long> {
   public static final Logger logger = LoggerFactory.getLogger(LongJavaMethod.class); 
   
   @Override
-  public Class<Long> getInputClass() {
-    return Long.class;
-  }
-
-  @Override
   public Long call(Envelope envelope, Long argument) {
     try {
       Thread.sleep(argument);

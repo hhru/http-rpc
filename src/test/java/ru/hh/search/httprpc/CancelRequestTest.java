@@ -31,12 +31,12 @@ public class CancelRequestTest {
     
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", address);
-    NettyServer server = new NettyServer(serverOptions, serializer, basePath);
-    server.register(path, new LongJavaMethod());
+    NettyServer server = new NettyServer(serverOptions, basePath);
+    server.register(path, new LongJavaMethod(), serializer, serializer);
     server.startAndWait();
 
-    NettyClient client = new NettyClient(new HashMap<String, Object>(), serializer, basePath);
-    ClientMethod<Long, Object> clientMethod = client.createMethod(path, Long.class);
+    NettyClient client = new NettyClient(new HashMap<String, Object>(), basePath);
+    ClientMethod<Long, Object> clientMethod = client.createMethod(path, serializer, serializer);
 
     try {
       ListenableFuture<Long> result = clientMethod.call(address, null, serverTime);
