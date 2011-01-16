@@ -18,7 +18,6 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -171,16 +170,9 @@ public class NettyClient  extends AbstractService implements Client {
       
       // TODO: handle channelDisconnected??
 
-      @Override
-      public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        future.cancel(true);
-        super.channelClosed(ctx, e);
-      }
-
       public ListenableFuture<O> getFuture() {
         return future;
       }
     }
-    
   }
 }
