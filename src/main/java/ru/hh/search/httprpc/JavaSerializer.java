@@ -8,14 +8,14 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-public class JavaSerializer implements Serializer {
+public class JavaSerializer<T> implements Encoder<T>, Decoder<T> {
   @Override
   public String getContentType() {
     return "application/x-java-serialized-object";
   }
 
   @Override
-  public <T> byte[] toBytes(T object) {
+  public byte[] toBytes(T object) {
     try {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -27,12 +27,12 @@ public class JavaSerializer implements Serializer {
   }
 
   @Override
-  public <T> T fromBytes(byte[] bytes, Class<T> klass) {
-    return fromInputStream(new ByteArrayInputStream(bytes), klass);
+  public T fromBytes(byte[] bytes, int offset, int length) {
+    return fromInputStream(new ByteArrayInputStream(bytes, offset, length));
   }
 
   @Override
-  public <T> T fromInputStream(InputStream stream, Class<T> klass) {
+  public T fromInputStream(InputStream stream) {
     try {
       ObjectInputStream ois = new ObjectInputStream(stream);
       @SuppressWarnings("unchecked")

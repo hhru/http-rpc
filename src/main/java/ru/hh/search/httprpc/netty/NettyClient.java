@@ -37,19 +37,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Client;
 import ru.hh.search.httprpc.ClientMethod;
+import ru.hh.search.httprpc.Decoder;
+import ru.hh.search.httprpc.Encoder;
 import ru.hh.search.httprpc.Envelope;
-import ru.hh.search.httprpc.Serializer;
 
 public class NettyClient  extends AbstractService implements Client {
   public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
   
-  private final Serializer serializer;
   private final String basePath;
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
 
-  public NettyClient(Map<String, Object> options, Serializer serializer, String basePath) {
-    this.serializer = serializer;
+  public NettyClient(Map<String, Object> options, String basePath) {
     this.basePath = basePath;
     // TODO thread pool settings
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
@@ -88,23 +87,25 @@ public class NettyClient  extends AbstractService implements Client {
   }
 
   @Override
-  public <O, I> ClientMethod<O, I> createMethod(String path, Class<O> outputClass) {
-    return new NettyClientMethod<O, I>(basePath + path, outputClass);
+  public <O, I> ClientMethod<O, I> createMethod(String path, Encoder<? super I> encoder, Decoder<? extends O> decoder) {
+    return new NettyClientMethod<O, I>(basePath + path, encoder, decoder);
   }
 
   private class NettyClientMethod<O, I> implements ClientMethod<O, I> {
-    final String fullPath;
-    final Class<O> outputClass;
+    private final String fullPath;
+    private final Encoder<? super I> encoder;
+    private final Decoder<? extends O> decoder;
 
-    private NettyClientMethod(String fullPath, Class<O> outputClass) {
+    private NettyClientMethod(String fullPath, Encoder<? super I> encoder, Decoder<? extends O> decoder) {
       this.fullPath = fullPath;
-      this.outputClass = outputClass;
+      this.encoder = encoder;
+      this.decoder = decoder;
     }
 
     @Override
     public ListenableFuture<O> call(final InetSocketAddress address, final Envelope envelope, final I input) {
       ChannelFuture connectFuture = bootstrap.connect(address);
-      final ClientHandler<O> handler = new ClientHandler<O>(outputClass, connectFuture.getChannel());
+      final ClientHandler handler = new ClientHandler(connectFuture.getChannel());
       connectFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
@@ -113,8 +114,8 @@ public class NettyClient  extends AbstractService implements Client {
             channel.getPipeline().addLast("handler", handler);
             HttpRequest request = new DefaultHttpRequest(
                     HttpVersion.HTTP_1_1, HttpMethod.POST, new URI(fullPath).toASCIIString());
-            byte[] bytes = serializer.toBytes(input);
-            request.setHeader(HttpHeaders.Names.CONTENT_TYPE, serializer.getContentType());
+            byte[] bytes = encoder.toBytes(input);
+            request.setHeader(HttpHeaders.Names.CONTENT_TYPE, encoder.getContentType());
             request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
             request.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
             request.setContent(ChannelBuffers.wrappedBuffer(bytes));
@@ -130,14 +131,12 @@ public class NettyClient  extends AbstractService implements Client {
       return handler.getFuture();
     }
   
-    private class ClientHandler<O> extends SimpleChannelUpstreamHandler {
+    private class ClientHandler extends SimpleChannelUpstreamHandler {
       
       private final ClientFuture<O> future;
-      private final Class<O> outputClass;
   
-      public ClientHandler(Class<O> outputClass, Channel channel) {
+      public ClientHandler(Channel channel) {
         this.future = new ClientFuture<O>(channel);
-        this.outputClass = outputClass;
       }
   
       @Override
@@ -146,10 +145,9 @@ public class NettyClient  extends AbstractService implements Client {
         // TODO handle remote exceptions
         if (response.getStatus().getCode() == 200) {
           ChannelBuffer content = response.getContent();
-          if (content.readable()) {
-            if (!future.set(serializer.fromInputStream(new ChannelBufferInputStream(content), outputClass))) {
-              logger.warn("server responce returned too late, future has been already cancelled");
-            }
+          // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
+          if (!future.set(decoder.fromInputStream(new ChannelBufferInputStream(content)))) {
+            logger.warn("server responce returned too late, future has been already cancelled");
           }
         }
       }

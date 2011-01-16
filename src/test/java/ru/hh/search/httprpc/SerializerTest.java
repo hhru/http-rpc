@@ -9,15 +9,17 @@ public class SerializerTest {
   public Object[][] serializers() {
     return new Object[][] {
       {new JavaSerializer(), new Object[] {"hello"}},
-      {new ProtobufSerializer(), new Object[] {Messages.Request.newBuilder().setRequest("hello").build(), 
+      {new ProtobufSerializer(Messages.Request.getDefaultInstance()), 
+        new Object[] {Messages.Request.newBuilder().setRequest("hello").build(), 
         Messages.Reply.newBuilder().setReply("world").build()}}
     };
   }
   
   @Test(dataProvider = "serializers")
   public void fromTo(Serializer serializer, Object[] objects) {
-    for (Object o : objects) {
-      assertEquals(serializer.fromBytes(serializer.toBytes(o), o.getClass()), o);
+    for (Object object : objects) {
+      byte[] bytes = serializer.toBytes(object);
+      assertEquals(serializer.fromBytes(bytes, 0, bytes.length), object);
     }
   }
 }

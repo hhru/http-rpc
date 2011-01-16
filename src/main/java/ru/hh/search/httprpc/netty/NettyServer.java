@@ -30,7 +30,8 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.search.httprpc.Serializer;
+import ru.hh.search.httprpc.Decoder;
+import ru.hh.search.httprpc.Encoder;
 import ru.hh.search.httprpc.ServerMethod;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -40,16 +41,15 @@ public class NettyServer extends AbstractService {
   
   public static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
   
-  private final Serializer serializer;
   private final ServerBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
-  private final ConcurrentMap<String, ServerMethod> methods = new ConcurrentHashMap<String, ServerMethod>();
+  private final ConcurrentMap<String, Descriptor> methods = new ConcurrentHashMap<String, Descriptor>();
   private final String basePath;
-
+  
   /**
    * @param options {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)}
    */
-  public NettyServer(Map<String, Object> options, Serializer serializer, String basePath) {
+  public NettyServer(Map<String, Object> options, String basePath) {
     // TODO thread pool options
     ChannelFactory factory = new NioServerSocketChannelFactory(
       Executors.newCachedThreadPool(),
@@ -67,7 +67,6 @@ public class NettyServer extends AbstractService {
         return pipeline;
       }
     });
-    this.serializer = serializer;
     this.basePath = basePath;
   }
   
@@ -84,14 +83,14 @@ public class NettyServer extends AbstractService {
       HttpRequest request = (HttpRequest) event.getMessage();
       // TODO: no method??
       // TODO: parse parameters to extract envelope, use path instead of whole uri
-      ServerMethod method = methods.get(request.getUri());
+      Descriptor descriptor = methods.get(request.getUri()); 
       // TODO move outside IO thread pool
       @SuppressWarnings({"unchecked"}) 
-      Object result = method.call(null, serializer.fromInputStream(new ChannelBufferInputStream(request.getContent()), 
-        method.getInputClass()));
+      Object result = descriptor.method.call(null, 
+        descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent())));
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-      byte[] bytes = serializer.toBytes(result);
-      response.setHeader(HttpHeaders.Names.CONTENT_TYPE, serializer.getContentType());
+      byte[] bytes = descriptor.encoder.toBytes(result);
+      response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
       request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
       response.setContent(ChannelBuffers.wrappedBuffer(bytes));
       event.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
@@ -134,7 +133,19 @@ public class NettyServer extends AbstractService {
     }
   }
   
-  public void register(String path, ServerMethod method) {
-    methods.put(basePath + path, method);
+  public void register(String path, ServerMethod method, Encoder encoder, Decoder decoder) {
+    methods.put(basePath + path, new Descriptor(method, encoder, decoder));
+  }
+  
+  private static class Descriptor {
+    final ServerMethod method;
+    final Encoder encoder;
+    final Decoder decoder;
+
+    private Descriptor(ServerMethod method, Encoder encoder, Decoder decoder) {
+      this.method = method;
+      this.encoder = encoder;
+      this.decoder = decoder;
+    }
   }
 }

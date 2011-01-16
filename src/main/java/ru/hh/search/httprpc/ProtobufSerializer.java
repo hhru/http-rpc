@@ -1,40 +1,40 @@
 package ru.hh.search.httprpc;
 
 import com.google.common.base.Throwables;
-import com.google.protobuf.Message;
+import com.google.protobuf.MessageLite;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 
-public class ProtobufSerializer implements Serializer {
+public class ProtobufSerializer<T extends MessageLite> implements Encoder<T>, Decoder<T> {
+  
+  private final T prototype;
+
+  public ProtobufSerializer(T prototype) {
+    this.prototype = prototype;
+  }
+
   @Override
   public String getContentType() {
     return "application/x-protobuf";
   }
 
   @Override
-  public <T> T fromInputStream(InputStream stream, Class<T> klass) {
+  public T fromInputStream(InputStream stream) {
     try {
-      // TODO: don't use reflection
-      Method newBuilder = klass.getMethod("newBuilder");
-      Message.Builder builder = (Message.Builder) newBuilder.invoke(null);
-      return (T) builder.mergeFrom(stream).build();
+      return (T) prototype.newBuilderForType().mergeFrom(stream).build();
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
   }
 
   @Override
-  public <T> byte[] toBytes(T object) {
-      return ((Message)object).toByteArray();
+  public byte[] toBytes(T object) {
+      return object.toByteArray();
   }
 
   @Override
-  public <T> T fromBytes(byte[] bytes, Class<T> klass) {
+  public T fromBytes(byte[] bytes, int offset, int length) {
     try {
-      // TODO: don't use reflection
-      Method newBuilder = klass.getMethod("newBuilder");
-      Message.Builder builder = (Message.Builder) newBuilder.invoke(null);
-      return (T) builder.mergeFrom(bytes).build();
+      return (T) prototype.newBuilderForType().mergeFrom(bytes, offset, length).build();
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
