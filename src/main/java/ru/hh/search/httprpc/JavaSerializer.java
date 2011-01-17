@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-public class JavaSerializer<T> implements Encoder<T>, Decoder<T> {
+public class JavaSerializer<T> implements Serializer<T> {
   @Override
   public String getContentType() {
     return "application/x-java-serialized-object";

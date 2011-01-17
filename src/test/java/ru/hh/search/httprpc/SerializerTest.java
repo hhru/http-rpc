@@ -10,8 +10,7 @@ public class SerializerTest {
     return new Object[][] {
       {new JavaSerializer(), new Object[] {"hello"}},
       {new ProtobufSerializer(Messages.Request.getDefaultInstance()), 
-        new Object[] {Messages.Request.newBuilder().setRequest("hello").build(), 
-        Messages.Reply.newBuilder().setReply("world").build()}}
+        new Object[] {Messages.Request.newBuilder().setRequest("hello").build()}}
     };
   }
   

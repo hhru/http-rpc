@@ -4,7 +4,7 @@ import com.google.common.base.Throwables;
 import com.google.protobuf.Message;
 import java.io.InputStream;
 
-public class ProtobufSerializer<T extends Message> implements Encoder<T>, Decoder<T> {
+public class ProtobufSerializer<T extends Message> implements Serializer<T> {
   
   private final T prototype;
 
