@@ -8,11 +8,6 @@
   <name>Netty RPC Implementation over HTTP</name>
   <dependencies>
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>2.3.0</version>
-    </dependency>
-    <dependency>
       <groupId>org.jboss.netty</groupId>
       <artifactId>netty</artifactId>
       <version>3.2.3.Final</version>
@@ -100,4 +95,29 @@
       <url>http://repository.jboss.org/nexus/content/groups/public/</url>
     </repository>
   </repositories>
+  <profiles>
+    <profile>
+      <id>protobuf-2.3</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+          <version>2.3.0</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>protobuf-2.0</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+          <version>2.0.3</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

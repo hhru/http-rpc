@@ -1,10 +1,10 @@
 package ru.hh.search.httprpc;
 
 import com.google.common.base.Throwables;
-import com.google.protobuf.MessageLite;
+import com.google.protobuf.Message;
 import java.io.InputStream;
 
-public class ProtobufSerializer<T extends MessageLite> implements Encoder<T>, Decoder<T> {
+public class ProtobufSerializer<T extends Message> implements Encoder<T>, Decoder<T> {
   
   private final T prototype;
 
