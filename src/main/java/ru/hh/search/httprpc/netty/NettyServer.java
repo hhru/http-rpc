@@ -30,8 +30,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.search.httprpc.Decoder;
-import ru.hh.search.httprpc.Encoder;
+import ru.hh.search.httprpc.Serializer;
 import ru.hh.search.httprpc.ServerMethod;
 import static org.jboss.netty.channel.Channels.pipeline;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -133,16 +132,16 @@ public class NettyServer extends AbstractService {
     }
   }
   
-  public void register(String path, ServerMethod method, Encoder encoder, Decoder decoder) {
+  public void register(String path, ServerMethod method, Serializer encoder, Serializer decoder) {
     methods.put(basePath + path, new Descriptor(method, encoder, decoder));
   }
   
   private static class Descriptor {
     final ServerMethod method;
-    final Encoder encoder;
-    final Decoder decoder;
+    final Serializer encoder;
+    final Serializer decoder;
 
-    private Descriptor(ServerMethod method, Encoder encoder, Decoder decoder) {
+    private Descriptor(ServerMethod method, Serializer encoder, Serializer decoder) {
       this.method = method;
       this.encoder = encoder;
       this.decoder = decoder;

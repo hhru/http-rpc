@@ -37,9 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Client;
 import ru.hh.search.httprpc.ClientMethod;
-import ru.hh.search.httprpc.Decoder;
-import ru.hh.search.httprpc.Encoder;
 import ru.hh.search.httprpc.Envelope;
+import ru.hh.search.httprpc.Serializer;
 
 public class NettyClient  extends AbstractService implements Client {
   public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
@@ -87,16 +86,16 @@ public class NettyClient  extends AbstractService implements Client {
   }
 
   @Override
-  public <O, I> ClientMethod<O, I> createMethod(String path, Encoder<? super I> encoder, Decoder<? extends O> decoder) {
+  public <O, I> ClientMethod<O, I> createMethod(String path, Serializer<? super I> encoder, Serializer<? extends O> decoder) {
     return new NettyClientMethod<O, I>(basePath + path, encoder, decoder);
   }
 
   private class NettyClientMethod<O, I> implements ClientMethod<O, I> {
     private final String fullPath;
-    private final Encoder<? super I> encoder;
-    private final Decoder<? extends O> decoder;
+    private final Serializer<? super I> encoder;
+    private final Serializer<? extends O> decoder;
 
-    private NettyClientMethod(String fullPath, Encoder<? super I> encoder, Decoder<? extends O> decoder) {
+    private NettyClientMethod(String fullPath, Serializer<? super I> encoder, Serializer<? extends O> decoder) {
       this.fullPath = fullPath;
       this.encoder = encoder;
       this.decoder = decoder;
