@@ -1,11 +1,14 @@
 package ru.hh.search.httprpc;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import ru.hh.search.httprpc.netty.NettyClient;
@@ -50,6 +53,20 @@ public class CancelRequestTest {
     } finally {
       client.stopAndWait();
       server.stopAndWait();
+    }
+  }
+
+  public static class LongJavaMethod implements ServerMethod<Long, Long> {
+    public static final Logger logger = LoggerFactory.getLogger(LongJavaMethod.class); 
+    
+    @Override
+    public Long call(Envelope envelope, Long argument) {
+      try {
+        Thread.sleep(argument);
+        return argument;
+      } catch (InterruptedException e) {
+        throw Throwables.propagate(e);
+      }
     }
   }
 }

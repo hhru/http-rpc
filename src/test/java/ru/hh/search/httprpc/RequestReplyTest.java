@@ -46,4 +46,18 @@ public class RequestReplyTest {
     client.stopAndWait();
     server.stopAndWait();
   }
+
+  public static class JavaMethod implements ServerMethod<String, String> {
+    
+    public String call(Envelope envelope, String argument) {
+      return argument.toUpperCase();
+    }
+  }
+
+  public static class ProtobufMethod implements ServerMethod<Messages.Reply, Messages.Request> {
+    @Override
+    public Messages.Reply call(Envelope envelope, Messages.Request argument) {
+      return Messages.Reply.newBuilder().setReply(argument.getRequest().toUpperCase()).build();
+    }
+  }
 }
