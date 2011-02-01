@@ -123,6 +123,7 @@ public class NettyClient  extends AbstractService implements Client {
             // TODO handle write failure
             channel.write(request);
           } else {
+            // TODO test connection failure
             logger.error("connection failed", future.getCause());
             clientFuture.setException(future.getCause());
           }
