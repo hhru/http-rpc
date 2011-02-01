@@ -39,7 +39,7 @@ public class RequestReplyTest {
     
     NettyClient client = new NettyClient(new HashMap<String, Object>(), basePath);
     ClientMethod clientMethod = client.createMethod(path, inputSerializer, outputSerializer);
-    Object remote = clientMethod.call(address, null, argument).get();
+    Object remote = clientMethod.call(address, new Envelope(10, "asdf"), argument).get();
     
     assertEquals(remote, local);
 

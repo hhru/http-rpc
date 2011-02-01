@@ -27,7 +27,7 @@ public class CancelRequestTest extends AbstractClientServerTest {
     server.register(path, new LongJavaMethod(), serializer, serializer);
     ClientMethod<Long, Object> clientMethod = client.createMethod(path, serializer, serializer);
 
-    ListenableFuture<Long> result = clientMethod.call(address, null, serverTime);
+    ListenableFuture<Long> result = clientMethod.call(address, new Envelope(10, "asdf"), serverTime);
     if (clientTime > 0) {
       Thread.sleep(clientTime);
     }
