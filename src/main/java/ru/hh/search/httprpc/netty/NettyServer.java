@@ -61,9 +61,7 @@ public class NettyServer extends AbstractService {
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = pipeline();
-        pipeline.addLast("decoder", new HttpRequestDecoder());
-        // TODO get rid of chunks
-        pipeline.addLast("aggregator", new HttpChunkAggregator(Integer.MAX_VALUE));
+        pipeline.addLast("decoder", new HttpRequestDecoder(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE));
         pipeline.addLast("encoder", new HttpResponseEncoder());
         pipeline.addLast("handler", new RequestHandler());
         return pipeline;

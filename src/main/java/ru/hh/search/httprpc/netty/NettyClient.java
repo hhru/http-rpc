@@ -58,9 +58,7 @@ public class NettyClient  extends AbstractService implements Client {
       @Override
       public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
-        pipeline.addLast("codec", new HttpClientCodec());
-        // TODO get rid of chunks
-        pipeline.addLast("aggregator", new HttpChunkAggregator(Integer.MAX_VALUE));
+        pipeline.addLast("codec", new HttpClientCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE));
         return pipeline;
       }
     });
