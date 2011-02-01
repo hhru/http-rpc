@@ -104,7 +104,8 @@ public class NettyClient  extends AbstractService implements Client {
     @Override
     public ListenableFuture<O> call(final InetSocketAddress address, final Envelope envelope, final I input) {
       ChannelFuture connectFuture = bootstrap.connect(address);
-      final ClientHandler handler = new ClientHandler(connectFuture.getChannel());
+      final ClientFuture<O> clientFuture = new ClientFuture<O>(connectFuture.getChannel());
+      final ClientHandler handler = new ClientHandler(clientFuture);
       connectFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
@@ -123,19 +124,18 @@ public class NettyClient  extends AbstractService implements Client {
             channel.write(request);
           } else {
             logger.error("connection failed", future.getCause());
-            future.setFailure(future.getCause());
+            clientFuture.setException(future.getCause());
           }
         }
       });
-      return handler.getFuture();
+      return clientFuture;
     }
   
     private class ClientHandler extends SimpleChannelUpstreamHandler {
-      
       private final ClientFuture<O> future;
   
-      public ClientHandler(Channel channel) {
-        this.future = new ClientFuture<O>(channel);
+      public ClientHandler(ClientFuture<O> future) {
+        this.future = future;
       }
   
       @Override
@@ -166,10 +166,6 @@ public class NettyClient  extends AbstractService implements Client {
       }
       
       // TODO: handle channelDisconnected??
-
-      public ListenableFuture<O> getFuture() {
-        return future;
-      }
     }
   }
 }
