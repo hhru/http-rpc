@@ -1,6 +1,9 @@
 package ru.hh.search.httprpc;
 
-public class Envelope {
+import java.io.Serializable;
+
+public class Envelope implements Serializable {
+  // TODO use long and rename to timeoutMilliseconds
   public final int timeout;
   public final String requestId;
 

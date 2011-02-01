@@ -31,6 +31,8 @@ import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.search.httprpc.Envelope;
+import ru.hh.search.httprpc.HttpRpcNames;
 import ru.hh.search.httprpc.Serializer;
 import ru.hh.search.httprpc.ServerMethod;
 import static org.jboss.netty.channel.Channels.pipeline;
@@ -82,12 +84,15 @@ public class NettyServer extends AbstractService {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
       HttpRequest request = (HttpRequest) event.getMessage();
       QueryStringDecoder uriDecoder = new QueryStringDecoder(request.getUri());
+      // TODO: validate query parameters
+      Envelope envelope = new Envelope(Integer.parseInt(uriDecoder.getParameters().get(HttpRpcNames.TIMEOUT).iterator().next()),
+        uriDecoder.getParameters().get(HttpRpcNames.REQUEST_ID).iterator().next());
       // TODO: no method??
       // TODO: parse parameters to extract envelope
-      Descriptor descriptor = methods.get(uriDecoder.getPath()); 
+      Descriptor descriptor = methods.get(uriDecoder.getPath());
       // TODO move outside IO thread pool
       @SuppressWarnings({"unchecked"}) 
-      Object result = descriptor.method.call(null, 
+      Object result = descriptor.method.call(envelope, 
         descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent())));
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       byte[] bytes = descriptor.encoder.toBytes(result);
