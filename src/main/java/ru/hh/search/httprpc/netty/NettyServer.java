@@ -86,7 +86,6 @@ public class NettyServer extends AbstractService {
       Envelope envelope = new Envelope(Integer.parseInt(uriDecoder.getParameters().get(HttpRpcNames.TIMEOUT).iterator().next()),
         uriDecoder.getParameters().get(HttpRpcNames.REQUEST_ID).iterator().next());
       // TODO: no method??
-      // TODO: parse parameters to extract envelope
       Descriptor descriptor = methods.get(uriDecoder.getPath());
       // TODO move outside IO thread pool
       @SuppressWarnings({"unchecked"}) 
