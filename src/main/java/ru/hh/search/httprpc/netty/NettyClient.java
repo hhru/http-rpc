@@ -3,7 +3,6 @@ package ru.hh.search.httprpc.netty;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -33,11 +32,13 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Client;
 import ru.hh.search.httprpc.ClientMethod;
 import ru.hh.search.httprpc.Envelope;
+import ru.hh.search.httprpc.HttpRpcNames;
 import ru.hh.search.httprpc.Serializer;
 
 public class NettyClient  extends AbstractService implements Client {
@@ -103,29 +104,33 @@ public class NettyClient  extends AbstractService implements Client {
 
     @Override
     public ListenableFuture<O> call(final InetSocketAddress address, final Envelope envelope, final I input) {
+      if (envelope == null) {
+        throw new NullPointerException("envelope is null");
+      }
       ChannelFuture connectFuture = bootstrap.connect(address);
       final ClientFuture<O> clientFuture = new ClientFuture<O>(connectFuture.getChannel());
       final ClientHandler handler = new ClientHandler(clientFuture);
       connectFuture.addListener(new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            Channel channel = future.getChannel();
+        public void operationComplete(ChannelFuture channelFuture) throws Exception {
+          if (channelFuture.isSuccess()) {
+            Channel channel = channelFuture.getChannel();
             allChannels.add(channel);
             channel.getPipeline().addLast("handler", handler);
-            HttpRequest request = new DefaultHttpRequest(
-                    HttpVersion.HTTP_1_1, HttpMethod.POST, new URI(fullPath).toASCIIString());
+            QueryStringEncoder uriEncoder = new QueryStringEncoder(fullPath);
+            uriEncoder.addParam(HttpRpcNames.TIMEOUT, Integer.toString(envelope.timeout));
+            uriEncoder.addParam(HttpRpcNames.REQUEST_ID, envelope.requestId);
+            HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uriEncoder.toString());
             byte[] bytes = encoder.toBytes(input);
             request.setHeader(HttpHeaders.Names.CONTENT_TYPE, encoder.getContentType());
             request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
             request.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
             request.setContent(ChannelBuffers.wrappedBuffer(bytes));
-            // TODO: use envelope
             // TODO handle write failure
             channel.write(request);
           } else {
             // TODO test connection failure
-            logger.error("connection failed", future.getCause());
-            clientFuture.setException(future.getCause());
+            logger.error("connection failed", channelFuture.getCause());
+            clientFuture.setException(channelFuture.getCause());
           }
         }
       });
