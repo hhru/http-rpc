@@ -3,12 +3,11 @@ package ru.hh.search.httprpc;
 import java.io.Serializable;
 
 public class Envelope implements Serializable {
-  // TODO use long and rename to timeoutMilliseconds
-  public final int timeout;
+  public final long timeoutMilliseconds;
   public final String requestId;
 
-  public Envelope(int timeout, String requestId) {
-    this.timeout = timeout;
+  public Envelope(long timeoutMilliseconds, String requestId) {
+    this.timeoutMilliseconds = timeoutMilliseconds;
     this.requestId = requestId;
   }
 
@@ -19,7 +18,7 @@ public class Envelope implements Serializable {
 
     Envelope envelope = (Envelope) o;
 
-    if (timeout != envelope.timeout) return false;
+    if (timeoutMilliseconds != envelope.timeoutMilliseconds) return false;
     if (!requestId.equals(envelope.requestId)) return false;
 
     return true;
@@ -27,8 +26,8 @@ public class Envelope implements Serializable {
 
   @Override
   public int hashCode() {
-    int result = timeout;
-    result = 31 * result + requestId.hashCode();
+    int result = (int) (timeoutMilliseconds ^ (timeoutMilliseconds >>> 32));
+    result = 31 * result + (requestId != null ? requestId.hashCode() : 0);
     return result;
   }
 }

@@ -117,7 +117,7 @@ public class NettyClient  extends AbstractService implements Client {
             allChannels.add(channel);
             channel.getPipeline().addLast("handler", handler);
             QueryStringEncoder uriEncoder = new QueryStringEncoder(fullPath);
-            uriEncoder.addParam(HttpRpcNames.TIMEOUT, Integer.toString(envelope.timeout));
+            uriEncoder.addParam(HttpRpcNames.TIMEOUT, Long.toString(envelope.timeoutMilliseconds));
             uriEncoder.addParam(HttpRpcNames.REQUEST_ID, envelope.requestId);
             HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uriEncoder.toString());
             byte[] bytes = encoder.toBytes(input);
