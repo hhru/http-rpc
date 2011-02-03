@@ -22,7 +22,6 @@ import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
@@ -49,15 +48,14 @@ public class NettyServer extends AbstractService {
   private final String basePath;
   
   /**
-   * @param options {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)}
+   * @param bootstrapOptions {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)}
+   * @param ioThreads
    */
-  public NettyServer(Map<String, Object> options, String basePath) {
-    // TODO thread pool options
-    ChannelFactory factory = new NioServerSocketChannelFactory(
-      Executors.newCachedThreadPool(),
-      Executors.newCachedThreadPool());
+  public NettyServer(Map<String, Object> bootstrapOptions, String basePath, int ioThreads) {
+    ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 
+      ioThreads);
     bootstrap = new ServerBootstrap(factory);
-    bootstrap.setOptions(options);
+    bootstrap.setOptions(bootstrapOptions);
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = pipeline();

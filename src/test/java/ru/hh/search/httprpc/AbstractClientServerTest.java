@@ -10,17 +10,18 @@ import ru.hh.search.httprpc.netty.NettyServer;
 
 public class AbstractClientServerTest {
   protected InetSocketAddress address = new InetSocketAddress(12346);
-  private String basePath = "/apiBase/";
+  protected String basePath = "/apiBase/";
   protected NettyServer server;
   protected NettyClient client;
+  protected int ioThreads = 2;
 
   @BeforeMethod
   public void start() {
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", address);
-    server = new NettyServer(serverOptions, basePath);
+    server = new NettyServer(serverOptions, basePath, ioThreads);
     server.startAndWait();
-    client = new NettyClient(new HashMap<String, Object>(), basePath);
+    client = new NettyClient(new HashMap<String, Object>(), basePath, ioThreads);
   }
 
   @AfterMethod

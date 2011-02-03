@@ -48,10 +48,9 @@ public class NettyClient  extends AbstractService implements Client {
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
 
-  public NettyClient(Map<String, Object> options, String basePath) {
+  public NettyClient(Map<String, Object> options, String basePath, int ioThreads) {
     this.basePath = basePath;
-    // TODO thread pool settings
-    ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
+    ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
     bootstrap = new ClientBootstrap(factory);
     bootstrap.setOptions(options);
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
