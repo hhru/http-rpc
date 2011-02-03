@@ -1,5 +1,6 @@
 package ru.hh.search.httprpc;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +33,7 @@ public class RequestReplyTest {
     
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", address);
-    NettyServer server = new NettyServer(serverOptions, basePath, 2);
+    NettyServer server = new NettyServer(serverOptions, basePath, 2, MoreExecutors.sameThreadExecutor());
     server.register(path, serverMethod, outputSerializer, inputSerializer);
     server.startAndWait();
 
