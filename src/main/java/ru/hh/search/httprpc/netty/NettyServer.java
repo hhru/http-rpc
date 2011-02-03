@@ -84,9 +84,9 @@ public class NettyServer extends AbstractService {
         uriDecoder.getParameters().get(HttpRpcNames.REQUEST_ID).iterator().next());
       // TODO: no method??
       Descriptor descriptor = methods.get(uriDecoder.getPath());
+      Object argument = descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent()));
       @SuppressWarnings({"unchecked"}) 
-      Object result = descriptor.method.call(envelope, 
-        descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent())));
+      Object result = descriptor.method.call(envelope, argument);
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       byte[] bytes = descriptor.encoder.toBytes(result);
       response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
