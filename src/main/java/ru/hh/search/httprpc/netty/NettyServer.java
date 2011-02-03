@@ -66,21 +66,15 @@ public class NettyServer extends AbstractService {
         return Channels.pipeline(
           new HttpRequestDecoder(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
           new HttpResponseEncoder(),
+          new FastHandler(),
           executionHandler,
-          new RequestHandler());
+          new MethodCallHandler());
       }
     });
     this.basePath = basePath;
   }
   
-  private class RequestHandler extends SimpleChannelUpstreamHandler {
-
-    @Override
-    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      allChannels.add(e.getChannel());
-      ctx.sendUpstream(e);
-    }
-
+  private class MethodCallHandler extends SimpleChannelUpstreamHandler {
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
       HttpRequest request = (HttpRequest) event.getMessage();
@@ -100,12 +94,22 @@ public class NettyServer extends AbstractService {
       response.setContent(ChannelBuffers.wrappedBuffer(bytes));
       event.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
     }
-
+  }
+  
+  private class FastHandler extends SimpleChannelUpstreamHandler {
+    
+    @Override
+    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+      allChannels.add(e.getChannel());
+      ctx.sendUpstream(e);
+    }
+    
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
       logger.error("server got exception, closing channel", e.getCause());
       e.getChannel().close();
     }
+
   }
 
   @Override
