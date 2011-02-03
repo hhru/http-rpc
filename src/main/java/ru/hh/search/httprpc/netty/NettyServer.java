@@ -74,6 +74,20 @@ public class NettyServer extends AbstractService {
     this.basePath = basePath;
   }
   
+  private class FastHandler extends SimpleChannelUpstreamHandler {
+    @Override
+    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+      allChannels.add(e.getChannel());
+      ctx.sendUpstream(e);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+      logger.error("server got exception, closing channel", e.getCause());
+      e.getChannel().close();
+    }
+  }
+  
   private class MethodCallHandler extends SimpleChannelUpstreamHandler {
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
@@ -84,9 +98,11 @@ public class NettyServer extends AbstractService {
         uriDecoder.getParameters().get(HttpRpcNames.REQUEST_ID).iterator().next());
       // TODO: no method??
       Descriptor descriptor = methods.get(uriDecoder.getPath());
+      // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
       Object argument = descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent()));
       @SuppressWarnings({"unchecked"}) 
       Object result = descriptor.method.call(envelope, argument);
+      // TODO handle exceptions, report them as HTTP 50x
       HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
       byte[] bytes = descriptor.encoder.toBytes(result);
       response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
@@ -96,22 +112,6 @@ public class NettyServer extends AbstractService {
     }
   }
   
-  private class FastHandler extends SimpleChannelUpstreamHandler {
-    
-    @Override
-    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      allChannels.add(e.getChannel());
-      ctx.sendUpstream(e);
-    }
-    
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-      logger.error("server got exception, closing channel", e.getCause());
-      e.getChannel().close();
-    }
-
-  }
-
   @Override
   protected void doStart() {
     logger.debug("starting");
