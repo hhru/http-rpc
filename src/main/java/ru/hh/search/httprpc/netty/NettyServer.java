@@ -1,6 +1,9 @@
 package ru.hh.search.httprpc.netty;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractService;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -29,16 +32,17 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Envelope;
 import ru.hh.search.httprpc.HttpRpcNames;
 import ru.hh.search.httprpc.Serializer;
 import ru.hh.search.httprpc.ServerMethod;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class NettyServer extends AbstractService {
   
@@ -99,16 +103,33 @@ public class NettyServer extends AbstractService {
       // TODO: no method??
       Descriptor descriptor = methods.get(uriDecoder.getPath());
       // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
+      HttpResponse response = null;
+      // TODO bad request if failed to decode
       Object argument = descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent()));
-      @SuppressWarnings({"unchecked"}) 
-      Object result = descriptor.method.call(envelope, argument);
-      // TODO handle exceptions, report them as HTTP 50x
-      HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-      byte[] bytes = descriptor.encoder.toBytes(result);
-      response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
-      request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
-      response.setContent(ChannelBuffers.wrappedBuffer(bytes));
+      try {
+        @SuppressWarnings({"unchecked"}) 
+        Object result = descriptor.method.call(envelope, argument);
+        byte[] bytes = descriptor.encoder.toBytes(result);
+        response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+        response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
+        request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+        response.setContent(ChannelBuffers.wrappedBuffer(bytes));
+      } catch (Exception callException) {
+        response = responseFromException(callException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+      }
       event.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
+    }
+
+    private HttpResponse responseFromException(Exception callException, HttpResponseStatus responseStatus) {
+      HttpResponse response;
+      response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, responseStatus);
+      StringBuilder content = new StringBuilder();
+      content.append(callException.getMessage()).append('\n');
+      content.append(Throwables.getStackTraceAsString(callException));
+      response.setContent(ChannelBuffers.copiedBuffer(content.toString(), CharsetUtil.UTF_8));
+      response.setHeader(HttpHeaders.Names.CONTENT_TYPE, "text/plain; charset=UTF-8");
+      response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, response.getContent().readableBytes());
+      return response;
     }
   }
   
