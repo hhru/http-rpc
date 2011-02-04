@@ -143,11 +143,13 @@ public class NettyClient  extends AbstractService implements Client {
       @Override
       public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
         HttpResponse response = (HttpResponse) e.getMessage();
+        ChannelBuffer content = response.getContent();
         // TODO handle remote exceptions
         if (response.getStatus().getCode() == 200) {
-          ChannelBuffer content = response.getContent();
+          // TODO handle decoder exceptions
           // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
-          if (!future.set(decoder.fromInputStream(new ChannelBufferInputStream(content)))) {
+          O result = decoder.fromInputStream(new ChannelBufferInputStream(content));
+          if (!future.set(result)) {
             logger.warn("server responce returned too late, future has been already cancelled");
           }
         }
