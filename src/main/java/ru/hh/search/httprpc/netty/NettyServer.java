@@ -102,20 +102,23 @@ public class NettyServer extends AbstractService {
         uriDecoder.getParameters().get(HttpRpcNames.REQUEST_ID).iterator().next());
       // TODO: no method??
       Descriptor descriptor = methods.get(uriDecoder.getPath());
-      // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
       HttpResponse response = null;
-      // TODO bad request if failed to decode
-      Object argument = descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent()));
       try {
-        @SuppressWarnings({"unchecked"}) 
-        Object result = descriptor.method.call(envelope, argument);
-        byte[] bytes = descriptor.encoder.toBytes(result);
-        response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-        response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
-        request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-        response.setContent(ChannelBuffers.wrappedBuffer(bytes));
-      } catch (Exception callException) {
-        response = responseFromException(callException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
+        Object argument = descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent()));
+        try {
+          @SuppressWarnings({"unchecked"}) 
+          Object result = descriptor.method.call(envelope, argument);
+          byte[] bytes = descriptor.encoder.toBytes(result);
+          response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+          response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
+          request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+          response.setContent(ChannelBuffers.wrappedBuffer(bytes));
+        } catch (Exception callException) {
+          response = responseFromException(callException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        }
+      } catch (Exception decoderException) {
+        response = responseFromException(decoderException, HttpResponseStatus.BAD_REQUEST);
       }
       event.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
     }
