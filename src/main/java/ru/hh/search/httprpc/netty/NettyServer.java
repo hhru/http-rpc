@@ -126,10 +126,7 @@ public class NettyServer extends AbstractService {
     private HttpResponse responseFromException(Exception callException, HttpResponseStatus responseStatus) {
       HttpResponse response;
       response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, responseStatus);
-      StringBuilder content = new StringBuilder();
-      content.append(callException.getMessage()).append('\n');
-      content.append(Throwables.getStackTraceAsString(callException));
-      response.setContent(ChannelBuffers.copiedBuffer(content.toString(), CharsetUtil.UTF_8));
+      response.setContent(ChannelBuffers.copiedBuffer(Throwables.getStackTraceAsString(callException), CharsetUtil.UTF_8));
       response.setHeader(HttpHeaders.Names.CONTENT_TYPE, "text/plain; charset=UTF-8");
       response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, response.getContent().readableBytes());
       return response;

@@ -11,7 +11,6 @@ public class BadResponseTest extends AbstractClientServerTest {
     Serializer<Object> serializer = new JavaSerializer<Object>();
     String path = "/throwMethod";
     server.register(path, new ThrowMethod(), serializer, serializer);
-
     ClientMethod<Object, String> clientMethod = client.<Object, String>createMethod(path, serializer, serializer);
 
     String message = "message to be returned as exception";
@@ -27,7 +26,6 @@ public class BadResponseTest extends AbstractClientServerTest {
         fail("unexpected cause", e.getCause());
       }
     }
-
   }
   
   private static class ThrowMethod implements ServerMethod<Object, String> {
