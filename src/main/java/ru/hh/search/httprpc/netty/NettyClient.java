@@ -25,7 +25,6 @@ import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
-import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -33,8 +32,10 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
+import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.search.httprpc.BadResponseException;
 import ru.hh.search.httprpc.Client;
 import ru.hh.search.httprpc.ClientMethod;
 import ru.hh.search.httprpc.Envelope;
@@ -144,13 +145,24 @@ public class NettyClient  extends AbstractService implements Client {
       public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
         HttpResponse response = (HttpResponse) e.getMessage();
         ChannelBuffer content = response.getContent();
-        // TODO handle remote exceptions
         if (response.getStatus().getCode() == 200) {
           // TODO handle decoder exceptions
           // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
           O result = decoder.fromInputStream(new ChannelBufferInputStream(content));
           if (!future.set(result)) {
-            logger.warn("server responce returned too late, future has been already cancelled");
+            logger.warn("server response returned too late, future has already been cancelled");
+          }
+        } else {
+          StringBuilder message = new StringBuilder("server at ").append(e.getChannel().getRemoteAddress())
+            .append(" returned: ").append(response.getStatus().toString());
+          String contentType = response.getHeader(HttpHeaders.Names.CONTENT_TYPE);
+          String details = null;
+          if (contentType != null && contentType.contains("text/plain")) {
+            details = content.toString(CharsetUtil.UTF_8);
+          }
+          logger.warn("{} \n {}", message, details);
+          if (!future.setException(new BadResponseException(message.toString(), details))) {
+            logger.warn("bad server response returned too late, future has already been cancelled");
           }
         }
       }
