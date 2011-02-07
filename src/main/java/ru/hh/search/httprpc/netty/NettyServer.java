@@ -4,6 +4,7 @@ import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractService;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -53,6 +54,7 @@ public class NettyServer extends AbstractService {
   private final ChannelGroup allChannels = new DefaultChannelGroup();
   private final ConcurrentMap<String, Descriptor> methods = new ConcurrentHashMap<String, Descriptor>();
   private final String basePath;
+  volatile private Channel serverChannel;
   
   /**
    * @param bootstrapOptions {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)}
@@ -78,6 +80,10 @@ public class NettyServer extends AbstractService {
     this.basePath = basePath;
   }
   
+  public InetSocketAddress getLocalAddress() {
+    return (InetSocketAddress) serverChannel.getLocalAddress();
+  }
+
   private class FastHandler extends SimpleChannelUpstreamHandler {
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
@@ -137,8 +143,9 @@ public class NettyServer extends AbstractService {
   protected void doStart() {
     logger.debug("starting");
     try {
-      Channel channel = bootstrap.bind();
-      allChannels.add(channel);
+      serverChannel = bootstrap.bind();
+      // TODO on shutdown close it, wait for all other channels to close, then kill them with force
+      allChannels.add(serverChannel);
       logger.info("started");
       notifyStarted();
     } catch (RuntimeException e){
