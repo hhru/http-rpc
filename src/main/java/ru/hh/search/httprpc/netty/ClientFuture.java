@@ -1,13 +1,13 @@
 package ru.hh.search.httprpc.netty;
 
 import com.google.common.util.concurrent.AbstractListenableFuture;
-import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
 
 public class ClientFuture<V> extends AbstractListenableFuture<V> {
-  private final Channel channel;
+  private ChannelFuture connectFuture;
 
-  public ClientFuture(Channel channel) {
-    this.channel = channel;
+  public ClientFuture(ChannelFuture connectFuture) {
+    this.connectFuture = connectFuture;
   }
 
   /**
@@ -16,7 +16,9 @@ public class ClientFuture<V> extends AbstractListenableFuture<V> {
   @Override
   public boolean cancel(boolean mayInterruptIfRunning) {
     boolean result = cancel();
-    channel.close();
+    if (!connectFuture.cancel()) {
+      connectFuture.getChannel().close();
+    }
     return result;
   }
   

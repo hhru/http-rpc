@@ -106,13 +106,13 @@ public class NettyClient  extends AbstractService implements Client {
         throw new NullPointerException("envelope is null");
       }
       ChannelFuture connectFuture = bootstrap.connect(address);
-      final ClientFuture<O> clientFuture = new ClientFuture<O>(connectFuture.getChannel());
+      final ClientFuture<O> clientFuture = new ClientFuture<O>(connectFuture);
       final ClientHandler handler = new ClientHandler(clientFuture);
       connectFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture channelFuture) throws Exception {
-          if (channelFuture.isSuccess()) {
-            Channel channel = channelFuture.getChannel();
-            allChannels.add(channel);
+          Channel channel = channelFuture.getChannel();
+          allChannels.add(channel);
+          if (channelFuture.isSuccess() && !clientFuture.isCancelled()) {
             channel.getPipeline().addLast("handler", handler);
             QueryStringEncoder uriEncoder = new QueryStringEncoder(fullPath);
             uriEncoder.addParam(HttpRpcNames.TIMEOUT, Long.toString(envelope.timeoutMilliseconds));
@@ -125,6 +125,8 @@ public class NettyClient  extends AbstractService implements Client {
             request.setContent(ChannelBuffers.wrappedBuffer(bytes));
             // TODO handle write failure
             channel.write(request);
+          } if (channelFuture.isCancelled() || clientFuture.isCancelled()) {
+            channel.close();
           } else {
             logger.error("connection failed", channelFuture.getCause());
             clientFuture.setException(channelFuture.getCause());
@@ -180,8 +182,6 @@ public class NettyClient  extends AbstractService implements Client {
           event.getChannel().close();
         }
       }
-      
-      // TODO: handle channelDisconnected??
     }
   }
 }
