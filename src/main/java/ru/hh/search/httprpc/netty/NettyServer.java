@@ -90,7 +90,7 @@ public class NettyServer extends AbstractService {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-      logger.error("server got exception, closing channel", e.getCause());
+      logger.error("server got an exception, closing channel", e.getCause());
       e.getChannel().close();
     }
   }
