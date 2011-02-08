@@ -26,7 +26,7 @@ public class AbstractClientServerTest {
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", new InetSocketAddress(InetAddress.getLocalHost(), 0));
     executor = Executors.newFixedThreadPool(callThreads);
-    server = new NettyServer(serverOptions, basePath, ioThreads, Executors.newFixedThreadPool(callThreads));
+    server = new NettyServer(serverOptions, basePath, ioThreads);
     server.startAndWait();
     address = server.getLocalAddress();
     client = new NettyClient(new HashMap<String, Object>(), basePath, ioThreads);

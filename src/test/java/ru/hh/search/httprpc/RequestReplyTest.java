@@ -25,7 +25,7 @@ public class RequestReplyTest extends AbstractClientServerTest {
     String path = "/helloMethod";
     server.register(path, serverMethod, outputSerializer, inputSerializer);
 
-    Object local = serverMethod.call(null, argument);
+    Object local = serverMethod.call(null, argument).get();
     
     ClientMethod clientMethod = client.createMethod(path, inputSerializer, outputSerializer);
     Object remote = clientMethod.call(address, new Envelope(10, "asdf"), argument).get();
