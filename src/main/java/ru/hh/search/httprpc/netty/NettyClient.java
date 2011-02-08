@@ -162,7 +162,7 @@ public class NettyClient  extends AbstractService implements Client {
           if (contentType != null && contentType.contains("text/plain")) {
             details = content.toString(CharsetUtil.UTF_8);
           }
-          logger.warn("{}, remote details \n {}", message, details);
+          logger.warn("{}, remote details:\n {}", message, details);
           if (!future.setException(new BadResponseException(message.toString(), details))) {
             logger.warn("bad server response returned too late, future has already been cancelled");
           }
