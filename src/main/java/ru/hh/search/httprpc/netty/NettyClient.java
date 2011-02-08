@@ -109,10 +109,10 @@ public class NettyClient  extends AbstractService implements Client {
       final ClientFuture<O> clientFuture = new ClientFuture<O>(connectFuture);
       final ClientHandler handler = new ClientHandler(clientFuture);
       connectFuture.addListener(new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture channelFuture) throws Exception {
-          Channel channel = channelFuture.getChannel();
+        public void operationComplete(ChannelFuture future) throws Exception {
+          Channel channel = future.getChannel();
           allChannels.add(channel);
-          if (channelFuture.isSuccess()) {
+          if (future.isSuccess()) {
             if (!clientFuture.isCancelled()) {
               channel.getPipeline().addLast("handler", handler);
               QueryStringEncoder uriEncoder = new QueryStringEncoder(fullPath);
@@ -127,9 +127,9 @@ public class NettyClient  extends AbstractService implements Client {
               // TODO handle write failure
               channel.write(request);
             }
-          } else {
-            logger.error("connection failed", channelFuture.getCause());
-            clientFuture.setException(channelFuture.getCause());
+          } else if(!future.isCancelled()) {
+            logger.error("connection failed", future.getCause());
+            clientFuture.setException(future.getCause());
           }
         }
       });
