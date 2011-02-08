@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.net.InetSocketAddress;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -156,8 +157,6 @@ public class NettyServer extends AbstractService {
     logger.debug("starting");
     try {
       serverChannel = bootstrap.bind();
-      // TODO on shutdown close it, wait for all other channels to close, then kill them with force
-      allChannels.add(serverChannel);
       logger.info("started");
       notifyStarted();
     } catch (RuntimeException e){
@@ -171,9 +170,13 @@ public class NettyServer extends AbstractService {
   protected void doStop() {
     logger.debug("stopping");
     try {
-      allChannels.close().awaitUninterruptibly();
-      bootstrap.releaseExternalResources();
+      serverChannel.close().awaitUninterruptibly();
+      Iterator<Channel> channelsIterator = allChannels.iterator();
+      while (channelsIterator.hasNext()) {
+        channelsIterator.next().getCloseFuture().awaitUninterruptibly();
+      }
       methodCallbackExecutor.shutdown();
+      bootstrap.releaseExternalResources();
       logger.info("stopped");
       notifyStopped();
     } catch (RuntimeException e) {
