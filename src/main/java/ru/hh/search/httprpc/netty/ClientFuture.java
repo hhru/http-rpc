@@ -1,6 +1,5 @@
 package ru.hh.search.httprpc.netty;
 
-import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.AbstractListenableFuture;
 import org.jboss.netty.channel.Channel;
 
