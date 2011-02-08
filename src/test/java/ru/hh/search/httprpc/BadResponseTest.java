@@ -8,7 +8,7 @@ import static org.testng.Assert.fail;
 
 public class BadResponseTest extends AbstractClientServerTest {
   @Test
-  public void test() throws InterruptedException {
+  public void testNoFuture() throws InterruptedException {
     Serializer<Object> serializer = new JavaSerializer<Object>();
     String path = "/throwMethod";
     server.register(path, new ThrowMethod(), serializer, serializer);
@@ -35,4 +35,6 @@ public class BadResponseTest extends AbstractClientServerTest {
       throw new RuntimeException(message);
     }
   }
+  
+  // TODO add test method thad returns failed future
 }
