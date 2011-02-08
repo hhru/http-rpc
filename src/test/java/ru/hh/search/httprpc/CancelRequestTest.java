@@ -21,7 +21,7 @@ public class CancelRequestTest extends AbstractClientServerTest {
   public void test(long clientTime, long serverTime) throws ExecutionException, InterruptedException {
     String path = "method";
     Serializer serializer = new JavaSerializer();
-    server.register(path, new LongJavaMethod(executor), serializer, serializer);
+    server.register(path, new LongJavaMethod(serverMethodExecutor), serializer, serializer);
     ClientMethod<Long, Object> clientMethod = client.createMethod(path, serializer, serializer);
 
     ListenableFuture<Long> result = clientMethod.call(address, new Envelope(10, "asdf"), serverTime);

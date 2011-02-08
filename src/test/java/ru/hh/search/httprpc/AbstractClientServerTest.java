@@ -18,14 +18,14 @@ public class AbstractClientServerTest {
   protected NettyServer server;
   protected NettyClient client;
   protected int ioThreads = 2;
-  protected int callThreads = 8;
-  protected ExecutorService executor;
+  protected int serverMethodThreads = 8;
+  protected ExecutorService serverMethodExecutor;
 
   @BeforeMethod
   public void start() throws UnknownHostException {
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", new InetSocketAddress(InetAddress.getLocalHost(), 0));
-    executor = Executors.newFixedThreadPool(callThreads);
+    serverMethodExecutor = Executors.newFixedThreadPool(serverMethodThreads);
     server = new NettyServer(serverOptions, basePath, ioThreads);
     server.startAndWait();
     address = server.getLocalAddress();
@@ -34,8 +34,8 @@ public class AbstractClientServerTest {
 
   @AfterMethod
   public void stop() {
+    serverMethodExecutor.shutdownNow();
     client.stopAndWait();
     server.stopAndWait();
-    executor.shutdown();
   }
 }

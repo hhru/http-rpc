@@ -13,15 +13,15 @@ public class ManyLongTasksTest extends AbstractClientServerTest {
     String path = "method";
     Serializer serializer = new JavaSerializer();
     
-    server.register(path, new LongJavaMethod(executor), serializer, serializer);
+    server.register(path, new LongJavaMethod(serverMethodExecutor), serializer, serializer);
 
     @SuppressWarnings({"unchecked"}) 
     ClientMethod clientMethod = client.createMethod(path, serializer, serializer);
     
     Envelope envelope = new Envelope(10, "qwerty");
     
-    // assume that we have more callThreads than number of slow tasks
-    assertTrue(callThreads > ioThreads + 1);
+    // assume that we have more serverMethodThreads than number of slow tasks
+    assertTrue(serverMethodThreads > ioThreads + 1);
     
     // flood server's ioThreads with long tasks (if it processes them in ioThreads) 
     for (int i = 0; i < ioThreads + 1; i++) {
