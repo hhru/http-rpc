@@ -1,5 +1,7 @@
 package ru.hh.search.httprpc;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ExecutionException;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
@@ -21,8 +23,8 @@ public class EnvelopeTest extends AbstractClientServerTest {
   
   private static class EchoEnvelopeMethod implements ServerMethod<Envelope, Void> {
     @Override
-    public Envelope call(Envelope envelope, Void argument) {
-      return envelope;
+    public ListenableFuture<Envelope> call(Envelope envelope, Void argument) {
+      return Futures.immediateFuture(envelope);
     }
   }
 }

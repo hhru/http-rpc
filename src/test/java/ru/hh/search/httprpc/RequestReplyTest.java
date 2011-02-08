@@ -1,5 +1,7 @@
 package ru.hh.search.httprpc;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ExecutionException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -33,15 +35,15 @@ public class RequestReplyTest extends AbstractClientServerTest {
 
   public static class JavaMethod implements ServerMethod<String, String> {
     
-    public String call(Envelope envelope, String argument) {
-      return argument.toUpperCase();
+    public ListenableFuture<String> call(Envelope envelope, String argument) {
+      return Futures.immediateFuture(argument.toUpperCase());
     }
   }
 
   public static class ProtobufMethod implements ServerMethod<Messages.Reply, Messages.Request> {
     @Override
-    public Messages.Reply call(Envelope envelope, Messages.Request argument) {
-      return Messages.Reply.newBuilder().setReply(argument.getRequest().toUpperCase()).build();
+    public ListenableFuture<Messages.Reply> call(Envelope envelope, Messages.Request argument) {
+      return Futures.immediateFuture(Messages.Reply.newBuilder().setReply(argument.getRequest().toUpperCase()).build());
     }
   }
 }

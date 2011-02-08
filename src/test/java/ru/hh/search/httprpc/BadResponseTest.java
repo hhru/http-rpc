@@ -1,5 +1,6 @@
 package ru.hh.search.httprpc;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ExecutionException;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
@@ -30,7 +31,7 @@ public class BadResponseTest extends AbstractClientServerTest {
   
   private static class ThrowMethod implements ServerMethod<Object, String> {
     @Override
-    public Void call(Envelope envelope, String message) {
+    public ListenableFuture<Object> call(Envelope envelope, String message) {
       throw new RuntimeException(message);
     }
   }

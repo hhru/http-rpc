@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import org.testng.annotations.AfterMethod;
@@ -19,11 +20,13 @@ public class AbstractClientServerTest {
   protected NettyClient client;
   protected int ioThreads = 2;
   protected int callThreads = 8;
+  protected ExecutorService executor;
 
   @BeforeMethod
   public void start() throws UnknownHostException {
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", new InetSocketAddress(InetAddress.getLocalHost(), 0));
+    executor = Executors.newFixedThreadPool(callThreads);
     server = new NettyServer(serverOptions, basePath, ioThreads, Executors.newFixedThreadPool(callThreads));
     server.startAndWait();
     address = server.getLocalAddress();
@@ -34,5 +37,6 @@ public class AbstractClientServerTest {
   public void stop() {
     client.stopAndWait();
     server.stopAndWait();
+    executor.shutdown();
   }
 }

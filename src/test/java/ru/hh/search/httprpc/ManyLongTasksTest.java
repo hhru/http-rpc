@@ -13,7 +13,7 @@ public class ManyLongTasksTest extends AbstractClientServerTest {
     String path = "method";
     Serializer serializer = new JavaSerializer();
     
-    server.register(path, new LongJavaMethod(), serializer, serializer);
+    server.register(path, new LongJavaMethod(executor), serializer, serializer);
 
     @SuppressWarnings({"unchecked"}) 
     ClientMethod clientMethod = client.createMethod(path, serializer, serializer);
