@@ -112,21 +112,21 @@ public class NettyClient  extends AbstractService implements Client {
         public void operationComplete(ChannelFuture channelFuture) throws Exception {
           Channel channel = channelFuture.getChannel();
           allChannels.add(channel);
-          if (channelFuture.isSuccess() && !clientFuture.isCancelled()) {
-            channel.getPipeline().addLast("handler", handler);
-            QueryStringEncoder uriEncoder = new QueryStringEncoder(fullPath);
-            uriEncoder.addParam(HttpRpcNames.TIMEOUT, Long.toString(envelope.timeoutMilliseconds));
-            uriEncoder.addParam(HttpRpcNames.REQUEST_ID, envelope.requestId);
-            HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uriEncoder.toString());
-            byte[] bytes = encoder.toBytes(input);
-            request.setHeader(HttpHeaders.Names.CONTENT_TYPE, encoder.getContentType());
-            request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length); 
-            request.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
-            request.setContent(ChannelBuffers.wrappedBuffer(bytes));
-            // TODO handle write failure
-            channel.write(request);
-          } if (channelFuture.isCancelled() || clientFuture.isCancelled()) {
-            channel.close();
+          if (channelFuture.isSuccess()) {
+            if (!clientFuture.isCancelled()) {
+              channel.getPipeline().addLast("handler", handler);
+              QueryStringEncoder uriEncoder = new QueryStringEncoder(fullPath);
+              uriEncoder.addParam(HttpRpcNames.TIMEOUT, Long.toString(envelope.timeoutMilliseconds));
+              uriEncoder.addParam(HttpRpcNames.REQUEST_ID, envelope.requestId);
+              HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uriEncoder.toString());
+              byte[] bytes = encoder.toBytes(input);
+              request.setHeader(HttpHeaders.Names.CONTENT_TYPE, encoder.getContentType());
+              request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+              request.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
+              request.setContent(ChannelBuffers.wrappedBuffer(bytes));
+              // TODO handle write failure
+              channel.write(request);
+            }
           } else {
             logger.error("connection failed", channelFuture.getCause());
             clientFuture.setException(channelFuture.getCause());
