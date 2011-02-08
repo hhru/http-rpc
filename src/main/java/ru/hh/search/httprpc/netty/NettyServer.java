@@ -97,21 +97,22 @@ public class NettyServer extends AbstractService {
   
   private class MethodCallHandler extends SimpleChannelUpstreamHandler {
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, final MessageEvent event) throws Exception {
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
       HttpRequest request = (HttpRequest) event.getMessage();
       QueryStringDecoder uriDecoder = new QueryStringDecoder(request.getUri());
       // TODO: validate query parameters
       Envelope envelope = new Envelope(Integer.parseInt(uriDecoder.getParameters().get(HttpRpcNames.TIMEOUT).iterator().next()),
         uriDecoder.getParameters().get(HttpRpcNames.REQUEST_ID).iterator().next());
       // TODO: no method??
-      final Descriptor descriptor = methods.get(uriDecoder.getPath());
+      final String path = uriDecoder.getPath();
+      final Descriptor descriptor = methods.get(path);
       Object argument;
+      final Channel channel = event.getChannel();
       try {
         // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
         argument = descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent()));
       } catch (Exception decoderException) {
-        event.getChannel()
-          .write(responseFromException(decoderException, HttpResponseStatus.BAD_REQUEST))
+        channel.write(responseFromException(decoderException, HttpResponseStatus.BAD_REQUEST))
           .addListener(ChannelFutureListener.CLOSE);
         return;
       }
@@ -120,24 +121,27 @@ public class NettyServer extends AbstractService {
         Runnable onComplete = new Runnable() {
           @Override
           public void run() {
-            HttpResponse response;
-            try {
-              Object result = callFuture.get();
-              byte[] bytes = descriptor.encoder.toBytes(result);
-              response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-              response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
-              response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-              response.setContent(ChannelBuffers.wrappedBuffer(bytes));
-            } catch (Exception futureException) {
-              response = responseFromException(futureException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+            if (channel.isOpen()) {
+              HttpResponse response;
+              try {
+                Object result = callFuture.get();
+                byte[] bytes = descriptor.encoder.toBytes(result);
+                response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+                response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
+                response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+                response.setContent(ChannelBuffers.wrappedBuffer(bytes));
+              } catch (Exception futureException) {
+                response = responseFromException(futureException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+              }
+              channel.write(response).addListener(ChannelFutureListener.CLOSE);
+            } else {
+              logger.warn("client on {} had closed connection before method on '{}' finished", channel.getRemoteAddress(), path);
             }
-            event.getChannel().write(response).addListener(ChannelFutureListener.CLOSE);
           }
         };
         callFuture.addListener(onComplete, methodCallbackExecutor);
       } catch (Exception callException) {
-        event.getChannel()
-          .write(responseFromException(callException, HttpResponseStatus.INTERNAL_SERVER_ERROR))
+        channel.write(responseFromException(callException, HttpResponseStatus.INTERNAL_SERVER_ERROR))
           .addListener(ChannelFutureListener.CLOSE);
       }
     }
