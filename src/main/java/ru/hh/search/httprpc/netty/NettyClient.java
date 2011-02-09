@@ -124,7 +124,6 @@ public class NettyClient  extends AbstractService implements Client {
               request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
               request.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
               request.setContent(ChannelBuffers.wrappedBuffer(bytes));
-              // TODO handle write failure
               channel.write(request);
             }
           } else if(!future.isCancelled()) {
