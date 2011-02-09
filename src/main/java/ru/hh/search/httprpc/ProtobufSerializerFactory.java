@@ -8,7 +8,7 @@ public class ProtobufSerializerFactory implements SerializerFactory<Message>{
   @Override
   public <T extends Message> Serializer<T> createForClass(Class<T> clazz) {
     try {
-      Method getDefaultInstance = clazz.getMethod("getDefaultInstanceForType");
+      Method getDefaultInstance = clazz.getMethod("getDefaultInstance");
       return new ProtobufSerializer<T>((T)getDefaultInstance.invoke(null));
     } catch (Exception e) {
       throw Throwables.propagate(e);
