@@ -25,10 +25,14 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.util.CharsetUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Envelope;
 import ru.hh.search.httprpc.HttpRpcNames;
 
 class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
+  public static final Logger logger = LoggerFactory.getLogger(ServerMethodCallHandler.class);
+  
   private final ChannelGroup allChannels;
   private final ConcurrentMap<String, ServerMethodDescriptor> methods;
   private final ExecutorService methodCallbackExecutor;
@@ -47,7 +51,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-    NettyServer.logger.error("server got an exception, closing channel", e.getCause());
+    logger.error("server got an exception, closing channel", e.getCause());
     e.getChannel().close();
   }
   
@@ -88,18 +92,18 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
               response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
               response.setContent(ChannelBuffers.wrappedBuffer(bytes));
             } catch (ExecutionException futureException) {
-              NettyServer.logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
+              logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
               response = responseFromException(futureException.getCause(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
             }
             if (channel.isOpen()) {
               channel.write(response).addListener(ChannelFutureListener.CLOSE);
             } else {
-              NettyServer.logger.warn("client on {} had closed connection before method on '{}' finished", channel.getRemoteAddress(), path);
+              logger.warn("client on {} had closed connection before method on '{}' finished", channel.getRemoteAddress(), path);
             }
           } catch (CancellationException e) {
             // nothing to do, channel hasbeen closed already 
           } catch (InterruptedException e) {
-            NettyServer.logger.error("got impossible exception, closing channel", e);
+            logger.error("got impossible exception, closing channel", e);
             channel.close();
           }
         }
@@ -109,7 +113,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
           if (callFuture.cancel(true)) {
-            NettyServer.logger.warn("method call on {} cancelled by closed client {} channel", path, channel.getRemoteAddress());
+            logger.warn("method call on {} cancelled by closed client {} channel", path, channel.getRemoteAddress());
           }
         }
       });
