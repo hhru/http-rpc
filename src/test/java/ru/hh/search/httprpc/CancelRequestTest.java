@@ -1,14 +1,12 @@
 package ru.hh.search.httprpc;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 public class CancelRequestTest extends AbstractClientServerTest {
   @DataProvider(name = "times")
