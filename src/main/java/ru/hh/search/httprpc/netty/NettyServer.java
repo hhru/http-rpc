@@ -154,7 +154,7 @@ public class NettyServer extends AbstractService {
           @Override
           public void operationComplete(ChannelFuture future) throws Exception {
             if (callFuture.cancel(true)) {
-              logger.warn("method call on {} cancelled by closed channel", path);
+              logger.warn("method call on {} cancelled by closed client {} channel", path, channel.getRemoteAddress());
             }
           }
         });
