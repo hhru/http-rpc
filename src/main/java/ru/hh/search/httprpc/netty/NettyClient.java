@@ -152,7 +152,7 @@ public class NettyClient  extends AbstractService {
             logger.warn("server response returned too late, future has already been cancelled");
           }
         } else {
-          StringBuilder message = new StringBuilder("server at ").append(e.getChannel().getRemoteAddress())
+          StringBuilder message = new StringBuilder("server at ").append(e.getChannel().getRemoteAddress()).append(fullPath)
             .append(" returned: ").append(response.getStatus().toString());
           String contentType = response.getHeader(HttpHeaders.Names.CONTENT_TYPE);
           String details = null;
