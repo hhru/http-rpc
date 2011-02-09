@@ -2,9 +2,12 @@ package ru.hh.search.httprpc;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class CancelRequestTest extends AbstractClientServerTest {
@@ -13,15 +16,19 @@ public class CancelRequestTest extends AbstractClientServerTest {
     return new Object[][] {
       {0, 1000},
       {1, 1000},
+      {10, 1000},
       {100, 1000}
     };
   }
   
-  @Test(expectedExceptions = CancellationException.class, dataProvider = "times") 
+  @Test(dataProvider = "times") 
   public void test(long clientTime, long serverTime) throws ExecutionException, InterruptedException {
     String path = "method";
     Serializer serializer = new JavaSerializer();
-    server.register(path, new LongJavaMethod(serverMethodExecutor), serializer, serializer);
+    final CountDownLatch completed = new CountDownLatch(1);
+    final CountDownLatch interrupted = new CountDownLatch(1);
+    server.register(path, new LongJavaMethod(serverMethodExecutor, completed, interrupted), 
+      serializer, serializer);
     ClientMethod<Long, Object> clientMethod = client.createMethod(path, serializer, serializer);
 
     ListenableFuture<Long> result = clientMethod.call(address, new Envelope(10, "asdf"), serverTime);
@@ -29,8 +36,8 @@ public class CancelRequestTest extends AbstractClientServerTest {
       Thread.sleep(clientTime);
     }
     result.cancel(true);
-    result.get();
-    fail();
+    assertTrue(completed.getCount() == 1);
+    assertTrue(interrupted.await(10, TimeUnit.MILLISECONDS));
   }
 
 }
