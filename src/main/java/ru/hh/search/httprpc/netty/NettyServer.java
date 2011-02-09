@@ -119,20 +119,20 @@ public class NettyServer extends AbstractService {
         Runnable onCallComplete = new Runnable() {
           @Override
           public void run() {
+            HttpResponse response;
+            try {
+              Object result = callFuture.get();
+              @SuppressWarnings({"unchecked"})
+              byte[] bytes = descriptor.encoder.toBytes(result);
+              response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+              response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
+              response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+              response.setContent(ChannelBuffers.wrappedBuffer(bytes));
+            } catch (Exception futureException) {
+              logger.error(String.format("method on %s threw an exception", path), futureException);
+              response = responseFromException(futureException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+            }
             if (channel.isOpen()) {
-              HttpResponse response;
-              try {
-                Object result = callFuture.get();
-                @SuppressWarnings({"unchecked"})
-                byte[] bytes = descriptor.encoder.toBytes(result);
-                response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-                response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
-                response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-                response.setContent(ChannelBuffers.wrappedBuffer(bytes));
-              } catch (Exception futureException) {
-                logger.error(String.format("method on %s threw an exception", path), futureException);
-                response = responseFromException(futureException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
-              }
               channel.write(response).addListener(ChannelFutureListener.CLOSE);
             } else {
               logger.warn("client on {} had closed connection before method on '{}' finished", channel.getRemoteAddress(), path);
