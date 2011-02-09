@@ -114,6 +114,7 @@ public class NettyServer extends AbstractService {
         return;
       }
       try {
+        @SuppressWarnings({"unchecked"}) 
         final ListenableFuture callFuture = descriptor.method.call(envelope, argument);
         Runnable onComplete = new Runnable() {
           @Override
@@ -122,6 +123,7 @@ public class NettyServer extends AbstractService {
               HttpResponse response;
               try {
                 Object result = callFuture.get();
+                @SuppressWarnings({"unchecked"})
                 byte[] bytes = descriptor.encoder.toBytes(result);
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
                 response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
@@ -173,9 +175,8 @@ public class NettyServer extends AbstractService {
     logger.debug("stopping");
     try {
       serverChannel.close().awaitUninterruptibly();
-      Iterator<Channel> channelsIterator = allChannels.iterator();
-      while (channelsIterator.hasNext()) {
-        channelsIterator.next().getCloseFuture().awaitUninterruptibly();
+      for (Channel channel : allChannels) {
+        channel.getCloseFuture().awaitUninterruptibly();
       }
       methodCallbackExecutor.shutdown();
       bootstrap.releaseExternalResources();
