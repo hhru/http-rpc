@@ -36,13 +36,12 @@ import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.BadResponseException;
-import ru.hh.search.httprpc.Client;
 import ru.hh.search.httprpc.ClientMethod;
 import ru.hh.search.httprpc.Envelope;
 import ru.hh.search.httprpc.HttpRpcNames;
 import ru.hh.search.httprpc.Serializer;
 
-public class NettyClient  extends AbstractService implements Client {
+public class NettyClient  extends AbstractService {
   public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
   
   private final String basePath;
@@ -84,7 +83,6 @@ public class NettyClient  extends AbstractService implements Client {
     }
   }
 
-  @Override
   public <O, I> ClientMethod<O, I> createMethod(String path, Serializer<? super I> encoder, Serializer<? extends O> decoder) {
     return new NettyClientMethod<O, I>(basePath + path, encoder, decoder);
   }
