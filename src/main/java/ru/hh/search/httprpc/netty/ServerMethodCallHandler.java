@@ -95,13 +95,9 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
               logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
               response = responseFromException(futureException.getCause(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
             }
-            if (channel.isOpen()) {
-              channel.write(response).addListener(ChannelFutureListener.CLOSE);
-            } else {
-              logger.warn("client on {} had closed connection before method on '{}' finished", channel.getRemoteAddress(), path);
-            }
+            channel.write(response).addListener(ChannelFutureListener.CLOSE);
           } catch (CancellationException e) {
-            // nothing to do, channel hasbeen closed already 
+            // nothing to do, channel has been closed already 
           } catch (InterruptedException e) {
             logger.error("got impossible exception, closing channel", e);
             channel.close();
