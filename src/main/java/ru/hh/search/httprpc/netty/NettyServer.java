@@ -134,7 +134,7 @@ public class NettyServer extends AbstractService {
                 response.setContent(ChannelBuffers.wrappedBuffer(bytes));
               } catch (ExecutionException futureException) {
                 logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
-                response = responseFromException(futureException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                response = responseFromException(futureException.getCause(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
               }
               if (channel.isOpen()) {
                 channel.write(response).addListener(ChannelFutureListener.CLOSE);
@@ -164,7 +164,7 @@ public class NettyServer extends AbstractService {
       }
     }
 
-    private HttpResponse responseFromException(Exception callException, HttpResponseStatus responseStatus) {
+    private HttpResponse responseFromException(Throwable callException, HttpResponseStatus responseStatus) {
       HttpResponse response;
       response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, responseStatus);
       response.setContent(ChannelBuffers.copiedBuffer(Throwables.getStackTraceAsString(callException), CharsetUtil.UTF_8));
