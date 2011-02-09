@@ -24,7 +24,6 @@ public class ProtobufTest extends AbstractClientServerTest {
     Messages.Reply local = serverMethod.call(null, argument).get();
     
     ClientMethod<Messages.Request, Messages.Reply> clientMethod = client.createMethod(signature);
-    @SuppressWarnings({"unchecked"}) 
     Messages.Reply remote = clientMethod.call(address, new Envelope(10, "asdf"), argument).get();
     
     assertEquals(remote, local);

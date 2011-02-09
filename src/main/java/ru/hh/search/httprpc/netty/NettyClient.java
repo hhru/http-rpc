@@ -88,9 +88,11 @@ public class NettyClient  extends AbstractService {
   }
 
   public <I, O> ClientMethod<I, O> createMethod(RPC<I, O> signature) {
-    return new NettyClientMethod<I, O>(basePath + signature.path, 
-      serializerFactory.createForClass(signature.inputClass), 
-      serializerFactory.createForClass(signature.outputClass));
+    return new NettyClientMethod<I, O>(
+        basePath + signature.path,
+        serializerFactory.createForClass(signature.inputClass),
+        serializerFactory.createForClass(signature.outputClass)
+    );
   }
 
   private class NettyClientMethod<I, O> implements ClientMethod<I, O> {
