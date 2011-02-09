@@ -13,7 +13,7 @@ public class ConnectionFailTest {
   @Test(expectedExceptions = ExecutionException.class)
   public void noServer() throws ExecutionException, InterruptedException {
     InetSocketAddress address = new InetSocketAddress(12346);
-    NettyClient client = new NettyClient(new HashMap<String, Object>(), "base", 2, null);
+    NettyClient client = new NettyClient(new HashMap<String, Object>(), "base", 2, new JavaSerializerFactory());
 
     try {
       ClientMethod method = client.createMethod(RPC.signature("abracadabra", Object.class, Object.class));
