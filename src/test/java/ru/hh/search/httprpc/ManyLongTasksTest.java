@@ -14,15 +14,12 @@ import static org.testng.AssertJUnit.assertTrue;
 public class ManyLongTasksTest extends AbstractClientServerTest {
   @Test
   public void test() throws ExecutionException, TimeoutException, InterruptedException {
-    String path = "method";
-    Serializer serializer = new JavaSerializer();
+    RPC<Long, Long> signature = RPC.signature("method", Long.class, Long.class);
     
     CountDownLatch completed = new CountDownLatch(1);
-    server.register(path, new LongJavaMethod(serverMethodExecutor, completed, new CountDownLatch(0)), 
-      serializer, serializer);
+    server.register(signature, new LongJavaMethod(serverMethodExecutor, completed, new CountDownLatch(0)));
 
-    @SuppressWarnings({"unchecked"}) 
-    ClientMethod clientMethod = client.createMethod(path, serializer, serializer);
+    ClientMethod<Long, Long> clientMethod = client.createMethod(signature);
     
     Envelope envelope = new Envelope(10, "qwerty");
     
@@ -35,7 +32,7 @@ public class ManyLongTasksTest extends AbstractClientServerTest {
       longFutures.add(clientMethod.call(address, envelope, 10000L));
     }
     
-    assertEquals(clientMethod.call(address, envelope, 1L).get(1, TimeUnit.SECONDS), 1L);
+    assertEquals(clientMethod.call(address, envelope, 1L).get(1, TimeUnit.SECONDS), new Long(1));
     assertTrue(completed.await(1, TimeUnit.SECONDS));
     
     for (Future future : longFutures) {

@@ -18,11 +18,10 @@ public class BadResponseTest extends AbstractClientServerTest {
   }
   
   @Test(dataProvider = "methods")
-  public void test(ServerMethod<Object, String> method) throws InterruptedException {
-    Serializer<Object> serializer = new JavaSerializer<Object>();
-    String path = "/throwMethod";
-    server.register(path, method, serializer, serializer);
-    ClientMethod<Object, String> clientMethod = client.<Object, String>createMethod(path, serializer, serializer);
+  public void test(ServerMethod<String, Object> method) throws InterruptedException {
+    RPC<String, Object> signature = RPC.signature("throwMethod", String.class, Object.class);
+    server.register(signature, method);
+    ClientMethod<String, Object> clientMethod = client.createMethod(signature);
 
     String message = "message to be returned as exception";
     try {
@@ -39,14 +38,14 @@ public class BadResponseTest extends AbstractClientServerTest {
     }
   }
   
-  private static class ThrowMethod implements ServerMethod<Object, String> {
+  private static class ThrowMethod implements ServerMethod<String, Object> {
     @Override
     public ListenableFuture<Object> call(Envelope envelope, String message) {
       throw new RuntimeException(message);
     }
   }
   
-  private static class FailedFutureMethod implements ServerMethod<Object, String> {
+  private static class FailedFutureMethod implements ServerMethod<String, Object> {
 
     @Override
     public ListenableFuture<Object> call(Envelope envelope, String message) {

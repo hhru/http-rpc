@@ -13,11 +13,11 @@ public class ConnectionFailTest {
   @Test(expectedExceptions = ExecutionException.class)
   public void noServer() throws ExecutionException, InterruptedException {
     InetSocketAddress address = new InetSocketAddress(12346);
-    NettyClient client = new NettyClient(new HashMap<String, Object>(), "base", 2);
-    JavaSerializer serializer = new JavaSerializer();
+    NettyClient client = new NettyClient(new HashMap<String, Object>(), "base", 2, null);
 
     try {
-      ClientMethod method = client.createMethod("abracadabra", serializer, serializer);
+      ClientMethod method = client.createMethod(RPC.signature("abracadabra", Object.class, Object.class));
+      @SuppressWarnings({"unchecked"}) 
       ListenableFuture future = method.call(address, new Envelope(10, "asdfa"), "hello");
       future.get();
       fail();

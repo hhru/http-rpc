@@ -12,7 +12,7 @@ import org.testng.annotations.BeforeMethod;
 import ru.hh.search.httprpc.netty.NettyClient;
 import ru.hh.search.httprpc.netty.NettyServer;
 
-public class AbstractClientServerTest {
+public abstract class AbstractClientServerTest {
   protected InetSocketAddress address;
   protected String basePath = "/apiBase/";
   protected NettyServer server;
@@ -21,15 +21,19 @@ public class AbstractClientServerTest {
   protected int serverMethodThreads = 8;
   protected ExecutorService serverMethodExecutor;
 
+  protected SerializerFactory serializerFactory() {
+    return new JavaSerializerFactory();
+  }
+
   @BeforeMethod
   public void start() throws UnknownHostException {
     Map<String, Object> serverOptions = new HashMap<String, Object>();
     serverOptions.put("localAddress", new InetSocketAddress(InetAddress.getLocalHost(), 0));
     serverMethodExecutor = Executors.newFixedThreadPool(serverMethodThreads);
-    server = new NettyServer(serverOptions, basePath, ioThreads);
+    server = new NettyServer(serverOptions, basePath, ioThreads, serializerFactory());
     server.startAndWait();
     address = server.getLocalAddress();
-    client = new NettyClient(new HashMap<String, Object>(), basePath, ioThreads);
+    client = new NettyClient(new HashMap<String, Object>(), basePath, ioThreads, serializerFactory());
   }
 
   @AfterMethod

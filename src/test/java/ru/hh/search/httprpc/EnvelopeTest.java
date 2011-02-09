@@ -9,19 +9,17 @@ import static org.testng.Assert.assertEquals;
 public class EnvelopeTest extends AbstractClientServerTest {
   @Test
   public void test() throws ExecutionException, InterruptedException {
-    String path = "method";
-    Serializer serializer = new JavaSerializer();
+    RPC<Void, Envelope> signature = RPC.signature("method", Void.class, Envelope.class);
     
-    server.register(path, new EchoEnvelopeMethod(), serializer, serializer);
+    server.register(signature, new EchoEnvelopeMethod());
 
-    @SuppressWarnings({"unchecked"}) 
-    ClientMethod clientMethod = client.createMethod(path, serializer, serializer);
+    ClientMethod<Void, Envelope> clientMethod = client.createMethod(signature);
     
     Envelope envelope = new Envelope(123, "sjdflaskjdfas");
     assertEquals(clientMethod.call(address, envelope, null).get(), envelope);
   }
   
-  private static class EchoEnvelopeMethod implements ServerMethod<Envelope, Void> {
+  private static class EchoEnvelopeMethod implements ServerMethod<Void, Envelope> {
     @Override
     public ListenableFuture<Envelope> call(Envelope envelope, Void argument) {
       return Futures.immediateFuture(envelope);

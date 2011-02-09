@@ -45,7 +45,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Envelope;
 import ru.hh.search.httprpc.HttpRpcNames;
+import ru.hh.search.httprpc.RPC;
 import ru.hh.search.httprpc.Serializer;
+import ru.hh.search.httprpc.SerializerFactory;
 import ru.hh.search.httprpc.ServerMethod;
 
 public class NettyServer extends AbstractService {
@@ -57,13 +59,15 @@ public class NettyServer extends AbstractService {
   private final ConcurrentMap<String, Descriptor> methods = new ConcurrentHashMap<String, Descriptor>();
   private final String basePath;
   private final ExecutorService methodCallbackExecutor = MoreExecutors.sameThreadExecutor();
+  private final SerializerFactory serializerFactory;
   volatile private Channel serverChannel;
   
   /**
-   * @param bootstrapOptions {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)}
+   * @param bootstrapOptions {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)} TODO replace by TcpOptions struct
    * @param ioThreads the maximum number of I/O worker threads for {@link org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory#NioServerSocketChannelFactory(java.util.concurrent.Executor, java.util.concurrent.Executor, int)}
+   * @param serializerFactory
    */
-  public NettyServer(Map<String, Object> bootstrapOptions, String basePath, int ioThreads) {
+  public NettyServer(Map<String, Object> bootstrapOptions, String basePath, int ioThreads, SerializerFactory serializerFactory) {
     ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 
       ioThreads);
     bootstrap = new ServerBootstrap(factory);
@@ -77,6 +81,7 @@ public class NettyServer extends AbstractService {
       }
     });
     this.basePath = basePath;
+    this.serializerFactory = serializerFactory;
   }
   
   public InetSocketAddress getLocalAddress() {
@@ -207,8 +212,10 @@ public class NettyServer extends AbstractService {
     }
   }
   
-  public void register(String path, ServerMethod method, Serializer encoder, Serializer decoder) {
-    methods.put(basePath + path, new Descriptor(method, encoder, decoder));
+  public <I, O> void register(RPC<I, O> signature, ServerMethod<I, O> method) {
+    methods.put(basePath + signature.path, 
+      new Descriptor(method, serializerFactory.createForClass(signature.outputClass), 
+        serializerFactory.createForClass(signature.inputClass)));
   }
   
   private static class Descriptor {

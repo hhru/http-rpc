@@ -39,7 +39,9 @@ import ru.hh.search.httprpc.BadResponseException;
 import ru.hh.search.httprpc.ClientMethod;
 import ru.hh.search.httprpc.Envelope;
 import ru.hh.search.httprpc.HttpRpcNames;
+import ru.hh.search.httprpc.RPC;
 import ru.hh.search.httprpc.Serializer;
+import ru.hh.search.httprpc.SerializerFactory;
 
 public class NettyClient  extends AbstractService {
   public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
@@ -47,9 +49,12 @@ public class NettyClient  extends AbstractService {
   private final String basePath;
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
+  private final SerializerFactory serializerFactory;
 
-  public NettyClient(Map<String, Object> options, String basePath, int ioThreads) {
+  // TODO replace options by TcpOptions struct
+  public NettyClient(Map<String, Object> options, String basePath, int ioThreads, SerializerFactory serializerFactory) {
     this.basePath = basePath;
+    this.serializerFactory = serializerFactory;
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
     bootstrap = new ClientBootstrap(factory);
     bootstrap.setOptions(options);
@@ -83,11 +88,13 @@ public class NettyClient  extends AbstractService {
     }
   }
 
-  public <O, I> ClientMethod<O, I> createMethod(String path, Serializer<? super I> encoder, Serializer<? extends O> decoder) {
-    return new NettyClientMethod<O, I>(basePath + path, encoder, decoder);
+  public <I, O> ClientMethod<I, O> createMethod(RPC<I, O> signature) {
+    return new NettyClientMethod<I, O>(basePath + signature.path, 
+      serializerFactory.createForClass(signature.inputClass), 
+      serializerFactory.createForClass(signature.outputClass));
   }
 
-  private class NettyClientMethod<O, I> implements ClientMethod<O, I> {
+  private class NettyClientMethod<I, O> implements ClientMethod<I, O> {
     private final String fullPath;
     private final Serializer<? super I> encoder;
     private final Serializer<? extends O> decoder;
