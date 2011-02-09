@@ -7,8 +7,10 @@ import com.google.common.util.concurrent.MoreExecutors;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -16,6 +18,7 @@ import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -119,27 +122,42 @@ public class NettyServer extends AbstractService {
         Runnable onCallComplete = new Runnable() {
           @Override
           public void run() {
-            HttpResponse response;
             try {
-              Object result = callFuture.get();
-              @SuppressWarnings({"unchecked"})
-              byte[] bytes = descriptor.encoder.toBytes(result);
-              response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-              response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
-              response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-              response.setContent(ChannelBuffers.wrappedBuffer(bytes));
-            } catch (Exception futureException) {
-              logger.error(String.format("method on %s threw an exception", path), futureException);
-              response = responseFromException(futureException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
-            }
-            if (channel.isOpen()) {
-              channel.write(response).addListener(ChannelFutureListener.CLOSE);
-            } else {
-              logger.warn("client on {} had closed connection before method on '{}' finished", channel.getRemoteAddress(), path);
+              HttpResponse response;
+              try {
+                Object result = callFuture.get();
+                @SuppressWarnings({"unchecked"})
+                byte[] bytes = descriptor.encoder.toBytes(result);
+                response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+                response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
+                response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
+                response.setContent(ChannelBuffers.wrappedBuffer(bytes));
+              } catch (ExecutionException futureException) {
+                logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
+                response = responseFromException(futureException, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+              }
+              if (channel.isOpen()) {
+                channel.write(response).addListener(ChannelFutureListener.CLOSE);
+              } else {
+                logger.warn("client on {} had closed connection before method on '{}' finished", channel.getRemoteAddress(), path);
+              }
+            } catch (CancellationException e) {
+              // nothing to do, channel hasbeen closed already 
+            } catch (InterruptedException e) {
+              logger.error("got impossible exception, closing channel", e);
+              channel.close();
             }
           }
         };
         callFuture.addListener(onCallComplete, methodCallbackExecutor);
+        channel.getCloseFuture().addListener(new ChannelFutureListener() {
+          @Override
+          public void operationComplete(ChannelFuture future) throws Exception {
+            if (callFuture.cancel(true)) {
+              logger.warn("method call on {} cancelled by closed channel", path);
+            }
+          }
+        });
       } catch (Exception callException) {
         channel.write(responseFromException(callException, HttpResponseStatus.INTERNAL_SERVER_ERROR))
           .addListener(ChannelFutureListener.CLOSE);

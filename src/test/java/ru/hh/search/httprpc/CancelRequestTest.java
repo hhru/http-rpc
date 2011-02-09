@@ -34,8 +34,9 @@ public class CancelRequestTest extends AbstractClientServerTest {
       Thread.sleep(clientTime);
     }
     result.cancel(true);
+    if (clientTime >= 100) {
+      assertTrue(interrupted.await(10, TimeUnit.MILLISECONDS));
+    }
     assertTrue(completed.getCount() == 1);
-    assertTrue(interrupted.await(10, TimeUnit.MILLISECONDS));
   }
-
 }
