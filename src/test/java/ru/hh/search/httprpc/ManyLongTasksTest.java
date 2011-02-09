@@ -1,7 +1,10 @@
 package ru.hh.search.httprpc;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.testng.annotations.Test;
@@ -26,12 +29,17 @@ public class ManyLongTasksTest extends AbstractClientServerTest {
     // assume that we have more serverMethodThreads than number of slow tasks
     assertTrue(serverMethodThreads > ioThreads + 1);
     
+    List<Future> longFutures = new LinkedList<Future>();
     // flood server's ioThreads with long tasks (if it processes them in ioThreads) 
     for (int i = 0; i < ioThreads + 1; i++) {
-      clientMethod.call(address, envelope, 10000L);
+      longFutures.add(clientMethod.call(address, envelope, 10000L));
     }
     
     assertEquals(clientMethod.call(address, envelope, 1L).get(1, TimeUnit.SECONDS), 1L);
     assertTrue(completed.await(1, TimeUnit.SECONDS));
+    
+    for (Future future : longFutures) {
+      future.cancel(true);
+    }
   }
 }
