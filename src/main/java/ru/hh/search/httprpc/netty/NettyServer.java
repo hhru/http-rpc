@@ -116,7 +116,7 @@ public class NettyServer extends AbstractService {
       try {
         @SuppressWarnings({"unchecked"}) 
         final ListenableFuture callFuture = descriptor.method.call(envelope, argument);
-        Runnable onComplete = new Runnable() {
+        Runnable onCallComplete = new Runnable() {
           @Override
           public void run() {
             if (channel.isOpen()) {
@@ -139,7 +139,7 @@ public class NettyServer extends AbstractService {
             }
           }
         };
-        callFuture.addListener(onComplete, methodCallbackExecutor);
+        callFuture.addListener(onCallComplete, methodCallbackExecutor);
       } catch (Exception callException) {
         channel.write(responseFromException(callException, HttpResponseStatus.INTERNAL_SERVER_ERROR))
           .addListener(ChannelFutureListener.CLOSE);
