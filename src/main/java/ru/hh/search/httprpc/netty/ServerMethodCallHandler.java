@@ -68,8 +68,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     Object argument;
     final Channel channel = event.getChannel();
     try {
-      // TODO see org.jboss.netty.handler.codec.protobuf.ProtobufDecoder.decode()
-      argument = descriptor.decoder.fromInputStream(new ChannelBufferInputStream(request.getContent()));
+      argument = Util.decodeContent(descriptor.decoder, request.getContent());
     } catch (Exception decoderException) {
       channel.write(responseFromException(decoderException, HttpResponseStatus.BAD_REQUEST))
         .addListener(ChannelFutureListener.CLOSE);
