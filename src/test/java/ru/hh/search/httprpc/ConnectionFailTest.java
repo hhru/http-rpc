@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import org.testng.annotations.Test;
 import ru.hh.search.httprpc.netty.NettyClient;
+import ru.hh.search.httprpc.netty.TcpOptions;
 import static org.testng.Assert.fail;
 
 public class ConnectionFailTest {
@@ -13,7 +14,7 @@ public class ConnectionFailTest {
   @Test(expectedExceptions = ExecutionException.class)
   public void noServer() throws ExecutionException, InterruptedException {
     InetSocketAddress address = new InetSocketAddress(12346);
-    NettyClient client = new NettyClient(new HashMap<String, Object>(), "base", 2, new JavaSerializerFactory());
+    NettyClient client = new NettyClient(TcpOptions.create(), "base", 2, new JavaSerializerFactory());
 
     try {
       ClientMethod method = client.createMethod(RPC.signature("abracadabra", Object.class, Object.class));

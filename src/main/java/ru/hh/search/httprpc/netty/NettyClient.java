@@ -51,13 +51,12 @@ public class NettyClient  extends AbstractService {
   private final ChannelGroup allChannels = new DefaultChannelGroup();
   private final SerializerFactory serializerFactory;
 
-  // TODO replace options by TcpOptions struct
-  public NettyClient(Map<String, Object> options, String basePath, int ioThreads, SerializerFactory serializerFactory) {
+  public NettyClient(TcpOptions options, String basePath, int ioThreads, SerializerFactory serializerFactory) {
     this.basePath = basePath;
     this.serializerFactory = serializerFactory;
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
     bootstrap = new ClientBootstrap(factory);
-    bootstrap.setOptions(options);
+    bootstrap.setOptions(options.toMap());
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       @Override
       public ChannelPipeline getPipeline() throws Exception {

@@ -32,7 +32,7 @@ public abstract class AbstractClientServerTest {
     server = new NettyServer(serverOptions, basePath, ioThreads, serializerFactory());
     server.startAndWait();
     address = server.getLocalAddress();
-    client = new NettyClient(new HashMap<String, Object>(), basePath, ioThreads, serializerFactory());
+    client = new NettyClient(TcpOptions.create(), basePath, ioThreads, serializerFactory());
   }
 
   @AfterMethod
