@@ -1,13 +1,11 @@
 package ru.hh.search.httprpc.netty;
 
-import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -17,17 +15,13 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Envelope;
+import ru.hh.search.httprpc.Http;
 import ru.hh.search.httprpc.HttpRpcNames;
 
 class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
@@ -70,8 +64,9 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     try {
       argument = Util.decodeContent(descriptor.decoder, request.getContent());
     } catch (Exception decoderException) {
-      channel.write(responseFromException(decoderException, HttpResponseStatus.BAD_REQUEST))
-        .addListener(ChannelFutureListener.CLOSE);
+      Http.response(HttpResponseStatus.BAD_REQUEST).
+          containing(decoderException).
+          sendAndClose(channel);
       return;
     }
     try {
@@ -81,20 +76,17 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
         @Override
         public void run() {
           try {
-            HttpResponse response;
             try {
               Object result = callFuture.get();
-              @SuppressWarnings({"unchecked"})
-              byte[] bytes = descriptor.encoder.toBytes(result);
-              response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-              response.setHeader(HttpHeaders.Names.CONTENT_TYPE, descriptor.encoder.getContentType());
-              response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-              response.setContent(ChannelBuffers.wrappedBuffer(bytes));
+              Http.response(HttpResponseStatus.OK).
+                  containing(descriptor.encoder.getContentType(), descriptor.encoder.toBytes(result)).
+                  sendAndClose(channel);
             } catch (ExecutionException futureException) {
               logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
-              response = responseFromException(futureException.getCause(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
+              Http.response(HttpResponseStatus.INTERNAL_SERVER_ERROR).
+                  containing(futureException.getCause()).
+                  sendAndClose(channel);
             }
-            channel.write(response).addListener(ChannelFutureListener.CLOSE);
           } catch (CancellationException e) {
             // nothing to do, channel has been closed already 
           } catch (InterruptedException e) {
@@ -113,18 +105,9 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
         }
       });
     } catch (Exception callException) {
-      channel.write(responseFromException(callException, HttpResponseStatus.INTERNAL_SERVER_ERROR))
-        .addListener(ChannelFutureListener.CLOSE);
+      Http.response(HttpResponseStatus.INTERNAL_SERVER_ERROR).
+          containing(callException).
+          sendAndClose(channel);
     }
   }
-
-  private HttpResponse responseFromException(Throwable callException, HttpResponseStatus responseStatus) {
-    HttpResponse response;
-    response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, responseStatus);
-    response.setContent(ChannelBuffers.copiedBuffer(Throwables.getStackTraceAsString(callException), CharsetUtil.UTF_8));
-    response.setHeader(HttpHeaders.Names.CONTENT_TYPE, "text/plain; charset=UTF-8");
-    response.setHeader(HttpHeaders.Names.CONTENT_LENGTH, response.getContent().readableBytes());
-    return response;
-  }
-
 }

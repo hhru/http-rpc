@@ -9,7 +9,6 @@ import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
@@ -24,20 +23,18 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.jboss.netty.handler.codec.http.QueryStringEncoder;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.BadResponseException;
 import ru.hh.search.httprpc.ClientMethod;
 import ru.hh.search.httprpc.Envelope;
+import ru.hh.search.httprpc.Http;
 import ru.hh.search.httprpc.HttpRpcNames;
 import ru.hh.search.httprpc.RPC;
 import ru.hh.search.httprpc.Serializer;
@@ -121,16 +118,13 @@ public class NettyClient  extends AbstractService {
           if (future.isSuccess()) {
             if (!clientFuture.isCancelled()) {
               channel.getPipeline().addLast("handler", handler);
-              QueryStringEncoder uriEncoder = new QueryStringEncoder(fullPath);
-              uriEncoder.addParam(HttpRpcNames.TIMEOUT, Long.toString(envelope.timeoutMilliseconds));
-              uriEncoder.addParam(HttpRpcNames.REQUEST_ID, envelope.requestId);
-              HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, uriEncoder.toString());
-              byte[] bytes = encoder.toBytes(input);
-              request.setHeader(HttpHeaders.Names.CONTENT_TYPE, encoder.getContentType());
-              request.setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length);
-              request.setHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
-              request.setContent(ChannelBuffers.wrappedBuffer(bytes));
-              channel.write(request);
+              Http.request(
+                    HttpMethod.POST,
+                    Http.uri(fullPath).
+                        param(HttpRpcNames.TIMEOUT, envelope.timeoutMilliseconds).
+                        param(HttpRpcNames.REQUEST_ID, envelope.requestId)
+                  ).containing(encoder.getContentType(), encoder.toBytes(input)).
+                  sendTo(channel);
             }
           } else if(!future.isCancelled()) {
             logger.error("connection failed", future.getCause());
@@ -152,7 +146,7 @@ public class NettyClient  extends AbstractService {
       public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
         HttpResponse response = (HttpResponse) e.getMessage();
         ChannelBuffer content = response.getContent();
-        if (response.getStatus().getCode() == 200) {
+        if (response.getStatus().equals(HttpResponseStatus.OK)) {
           // TODO handle decoder exceptions
           O result = Util.decodeContent(decoder, content);
           if (!future.set(result)) {
