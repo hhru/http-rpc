@@ -3,7 +3,6 @@ package ru.hh.search.httprpc.netty;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -38,15 +37,15 @@ public class NettyServer extends AbstractService {
   volatile private Channel serverChannel;
   
   /**
-   * @param bootstrapOptions {@link org.jboss.netty.bootstrap.Bootstrap#setOptions(java.util.Map)} TODO replace by TcpOptions struct
+   * @param options
    * @param ioThreads the maximum number of I/O worker threads for {@link org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory#NioServerSocketChannelFactory(java.util.concurrent.Executor, java.util.concurrent.Executor, int)}
    * @param serializerFactory
    */
-  public NettyServer(Map<String, Object> bootstrapOptions, String basePath, int ioThreads, SerializerFactory serializerFactory) {
+  public NettyServer(TcpOptions options, String basePath, int ioThreads, SerializerFactory serializerFactory) {
     ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 
       ioThreads);
     bootstrap = new ServerBootstrap(factory);
-    bootstrap.setOptions(bootstrapOptions);
+    bootstrap.setOptions(options.toMap());
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
         return Channels.pipeline(
