@@ -143,17 +143,19 @@ public class NettyClient  extends AbstractService {
       }
   
       @Override
-      public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        HttpResponse response = (HttpResponse) e.getMessage();
+      public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
+        HttpResponse response = (HttpResponse) event.getMessage();
         ChannelBuffer content = response.getContent();
         if (response.getStatus().equals(HttpResponseStatus.OK)) {
-          // TODO handle decoder exceptions
-          O result = Util.decodeContent(decoder, content);
-          if (!future.set(result)) {
-            logger.warn("server response returned too late, future has already been cancelled");
+          try {
+            O result = Util.decodeContent(decoder, content);
+            future.set(result);
+          } catch (RuntimeException e) {
+            logger.warn("failed to decode response", e);
+            future.setException(e);
           }
         } else {
-          StringBuilder message = new StringBuilder("server at ").append(e.getChannel().getRemoteAddress()).append(fullPath)
+          StringBuilder message = new StringBuilder("server at ").append(event.getChannel().getRemoteAddress()).append(fullPath)
             .append(" returned: ").append(response.getStatus().toString());
           String contentType = response.getHeader(HttpHeaders.Names.CONTENT_TYPE);
           String details = null;
