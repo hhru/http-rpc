@@ -52,15 +52,20 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
   @Override
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
     HttpRequest request = (HttpRequest) event.getMessage();
+    final Channel channel = event.getChannel();
     QueryStringDecoder uriDecoder = new QueryStringDecoder(request.getUri());
     // TODO: validate query parameters
     Envelope envelope = new Envelope(Integer.parseInt(uriDecoder.getParameters().get(HttpRpcNames.TIMEOUT).iterator().next()),
       uriDecoder.getParameters().get(HttpRpcNames.REQUEST_ID).iterator().next());
-    // TODO: no method??
     final String path = uriDecoder.getPath();
     final ServerMethodDescriptor descriptor = methods.get(path);
+    if (descriptor == null) {
+      Http.response(HttpResponseStatus.NOT_FOUND).
+        containing("no method registered on path: " + path).
+        sendAndClose(channel);
+      return;
+    }
     Object argument;
-    final Channel channel = event.getChannel();
     try {
       argument = Util.decodeContent(descriptor.decoder, request.getContent());
     } catch (Exception decoderException) {
