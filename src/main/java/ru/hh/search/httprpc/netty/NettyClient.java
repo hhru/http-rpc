@@ -1,14 +1,13 @@
 package ru.hh.search.httprpc.netty;
 
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
@@ -105,28 +104,26 @@ public class NettyClient  extends AbstractService {
 
     @Override
     public ListenableFuture<O> call(final InetSocketAddress address, final Envelope envelope, final I input) {
-      if (envelope == null) {
-        throw new NullPointerException("envelope is null");
-      }
+      Preconditions.checkNotNull(envelope, "envelope");
+
       ChannelFuture connectFuture = bootstrap.connect(address);
-      final ClientFuture<O> clientFuture = new ClientFuture<O>(connectFuture);
-      final ClientHandler handler = new ClientHandler(clientFuture);
+
+      final Channel channel = connectFuture.getChannel();
+      final ClientFuture<O> clientFuture = new ClientFuture<O>(channel);
+      allChannels.add(channel);
+
       connectFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {
-          Channel channel = future.getChannel();
-          allChannels.add(channel);
           if (future.isSuccess()) {
-            if (!clientFuture.isCancelled()) {
-              channel.getPipeline().addLast("handler", handler);
-              Http.request(
-                    HttpMethod.POST,
-                    Http.uri(fullPath).
-                        param(HttpRpcNames.TIMEOUT, envelope.timeoutMilliseconds).
-                        param(HttpRpcNames.REQUEST_ID, envelope.requestId)
-                  ).containing(encoder.getContentType(), encoder.toBytes(input)).
-                  sendTo(channel);
-            }
-          } else if(!future.isCancelled()) {
+            channel.getPipeline().addLast("handler", new ClientHandler(clientFuture));
+            Http.request(
+                  HttpMethod.POST,
+                  Http.uri(fullPath).
+                      param(HttpRpcNames.TIMEOUT, envelope.timeoutMilliseconds).
+                      param(HttpRpcNames.REQUEST_ID, envelope.requestId)
+                ).containing(encoder.getContentType(), encoder.toBytes(input)).
+                sendTo(channel);
+          } else {
             logger.error("connection failed", future.getCause());
             clientFuture.setException(future.getCause());
           }
@@ -163,9 +160,8 @@ public class NettyClient  extends AbstractService {
             details = content.toString(CharsetUtil.UTF_8);
           }
           logger.warn("{}, remote details:\n {}", message, details);
-          if (!future.setException(new BadResponseException(message.toString(), details))) {
-            logger.warn("bad server response returned too late, future has already been cancelled");
-          }
+
+          future.setException(new BadResponseException(message.toString(), details));
         }
       }
     
