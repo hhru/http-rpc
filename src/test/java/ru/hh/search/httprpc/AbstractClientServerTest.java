@@ -20,7 +20,7 @@ public abstract class AbstractClientServerTest {
   protected int serverMethodThreads = 8;
   protected ExecutorService serverMethodExecutor;
 
-  protected SerializerFactory serializerFactory() {
+  protected SerializerFactory<? super Object> serializerFactory() {
     return new JavaSerializerFactory();
   }
 
