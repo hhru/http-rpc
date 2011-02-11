@@ -45,9 +45,9 @@ public class NettyClient  extends AbstractService {
   private final String basePath;
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
-  private final SerializerFactory serializerFactory;
+  private final SerializerFactory<? super Object> serializerFactory;
 
-  public NettyClient(TcpOptions options, String basePath, int ioThreads, SerializerFactory serializerFactory) {
+  public NettyClient(TcpOptions options, String basePath, int ioThreads, SerializerFactory<? super Object> serializerFactory) {
     this.basePath = basePath;
     this.serializerFactory = serializerFactory;
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
