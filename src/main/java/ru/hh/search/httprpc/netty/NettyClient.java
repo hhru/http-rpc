@@ -124,7 +124,7 @@ public class NettyClient  extends AbstractService {
                 ).containing(encoder.getContentType(), encoder.toBytes(input)).
                 sendTo(channel);
           } else {
-            logger.error("connection failed", future.getCause());
+            logger.debug("connection failed", future.getCause());
             clientFuture.setException(future.getCause());
           }
         }
@@ -148,7 +148,7 @@ public class NettyClient  extends AbstractService {
             O result = Util.decodeContent(decoder, content);
             future.set(result);
           } catch (RuntimeException e) {
-            logger.warn("failed to decode response", e);
+            logger.debug("failed to decode response", e);
             future.setException(e);
           }
         } else {
@@ -159,7 +159,7 @@ public class NettyClient  extends AbstractService {
           if (contentType != null && contentType.contains("text/plain")) {
             details = content.toString(CharsetUtil.UTF_8);
           }
-          logger.warn("{}, remote details:\n {}", message, details);
+          logger.debug("{}, remote details:\n {}", message, details);
 
           future.setException(new BadResponseException(message.toString(), details));
         }
@@ -171,9 +171,11 @@ public class NettyClient  extends AbstractService {
         if (future.isCancelled() && cause instanceof ClosedChannelException) {
           logger.debug("attempt to use closed channel after cancelling request", cause);
         } else {
-          logger.error("client got exception, closing channel", cause);
-          if (future.setException(cause)) {
-            logger.warn("failed to set exception for future, cancelled: {}, done: {}", future.isCancelled(), future.isDone());
+          logger.debug("client got exception, closing channel", cause);
+          if (!future.setException(cause)) {
+            logger.warn(
+              String.format("failed to set exception for future, cancelled: %b, done: %b", future.isCancelled(), future.isDone()),
+              cause);
           }
           event.getChannel().close();
         }
