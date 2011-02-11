@@ -30,10 +30,11 @@ public class NettyServer extends AbstractService {
   
   private final ServerBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
-  private final ConcurrentMap<String, ServerMethodDescriptor> methods = new ConcurrentHashMap<String, ServerMethodDescriptor>();
+  private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods = 
+    new ConcurrentHashMap<String, ServerMethodDescriptor<? super Object, ? super Object>>();
   private final String basePath;
   private final ExecutorService methodCallbackExecutor = MoreExecutors.sameThreadExecutor();
-  private final SerializerFactory serializerFactory;
+  private final SerializerFactory<? super Object> serializerFactory;
   volatile private Channel serverChannel;
   
   /**
@@ -41,7 +42,7 @@ public class NettyServer extends AbstractService {
    * @param ioThreads the maximum number of I/O worker threads for {@link org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory#NioServerSocketChannelFactory(java.util.concurrent.Executor, java.util.concurrent.Executor, int)}
    * @param serializerFactory
    */
-  public NettyServer(TcpOptions options, String basePath, int ioThreads, SerializerFactory serializerFactory) {
+  public NettyServer(TcpOptions options, String basePath, int ioThreads, SerializerFactory<? super Object> serializerFactory) {
     ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 
       ioThreads);
     bootstrap = new ServerBootstrap(factory);
@@ -95,6 +96,7 @@ public class NettyServer extends AbstractService {
     }
   }
   
+  @SuppressWarnings({"unchecked"})
   public <I, O> void register(RPC<I, O> signature, ServerMethod<I, O> method) {
     methods.put(basePath + signature.path, 
       new ServerMethodDescriptor(method, serializerFactory.createForClass(signature.outputClass), 
