@@ -8,10 +8,9 @@ import static org.testng.Assert.assertEquals;
 
 public class ProtobufTest extends AbstractClientServerTest {
 
-  @SuppressWarnings({"unchecked"})
   @Override
-  protected SerializerFactory<? super Object> serializerFactory() {
-    return (SerializerFactory) new ProtobufSerializerFactory();
+  protected SerializerFactory serializerFactory() {
+    return new ProtobufSerializerFactory();
   }
   
   @Test
