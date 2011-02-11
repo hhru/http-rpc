@@ -34,10 +34,10 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
   public static final Logger logger = LoggerFactory.getLogger(ServerMethodCallHandler.class);
   
   private final ChannelGroup allChannels;
-  private final ConcurrentMap<String, ServerMethodDescriptor> methods;
+  private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods;
   private final ExecutorService methodCallbackExecutor;
 
-  ServerMethodCallHandler(ChannelGroup allChannels, ConcurrentMap<String, ServerMethodDescriptor> methods, ExecutorService methodCallbackExecutor) {
+  ServerMethodCallHandler(ChannelGroup allChannels, ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods, ExecutorService methodCallbackExecutor) {
     this.allChannels = allChannels;
     this.methods = methods;
     this.methodCallbackExecutor = methodCallbackExecutor;
@@ -60,7 +60,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     HttpRequest request = (HttpRequest) event.getMessage();
     final Channel channel = event.getChannel();
     QueryStringDecoder uriDecoder = new QueryStringDecoder(request.getUri());
-    Envelope envelope = null;
+    Envelope envelope;
     try {
       Map<String,List<String>> parameters = uriDecoder.getParameters();
       List<String> rawTimeout = parameters.get(TIMEOUT);
@@ -75,7 +75,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
       return;
     }
     final String path = uriDecoder.getPath();
-    final ServerMethodDescriptor descriptor = methods.get(path);
+    final ServerMethodDescriptor<? super Object, ? super Object> descriptor = methods.get(path);
     if (descriptor == null) {
       Http.response(NOT_FOUND).
         containing("no method registered on path: " + path).
