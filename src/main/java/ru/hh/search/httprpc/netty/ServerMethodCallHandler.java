@@ -1,5 +1,6 @@
 package ru.hh.search.httprpc.netty;
 
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.Map;
@@ -63,11 +64,9 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     try {
       Map<String,List<String>> parameters = uriDecoder.getParameters();
       List<String> rawTimeout = parameters.get(TIMEOUT);
-      if(rawTimeout.size() != 1) 
-        throw new IllegalArgumentException("single " + TIMEOUT + " parameter required");
+      Preconditions.checkArgument(rawTimeout.size() == 1, "single " + TIMEOUT + " parameter required");
       List<String> rawRequestId = parameters.get(REQUEST_ID);
-      if (rawRequestId.size() != 1)
-        throw new IllegalArgumentException("single " + REQUEST_ID + " parameter required");
+      Preconditions.checkArgument(rawRequestId.size() == 1, "single " + REQUEST_ID + " parameter required");
       envelope = new Envelope(Integer.parseInt(rawTimeout.get(0)), rawRequestId.get(0));
     } catch (Exception parametersException) {
       Http.response(BAD_REQUEST).
