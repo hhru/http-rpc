@@ -1,11 +1,12 @@
 package ru.hh.search.httprpc.netty;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -16,13 +17,17 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Envelope;
 import ru.hh.search.httprpc.Http;
-import ru.hh.search.httprpc.HttpRpcNames;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
+import static ru.hh.search.httprpc.HttpRpcNames.REQUEST_ID;
+import static ru.hh.search.httprpc.HttpRpcNames.TIMEOUT;
 
 class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
   public static final Logger logger = LoggerFactory.getLogger(ServerMethodCallHandler.class);
@@ -54,13 +59,26 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     HttpRequest request = (HttpRequest) event.getMessage();
     final Channel channel = event.getChannel();
     QueryStringDecoder uriDecoder = new QueryStringDecoder(request.getUri());
-    // TODO: validate query parameters
-    Envelope envelope = new Envelope(Integer.parseInt(uriDecoder.getParameters().get(HttpRpcNames.TIMEOUT).iterator().next()),
-      uriDecoder.getParameters().get(HttpRpcNames.REQUEST_ID).iterator().next());
+    Envelope envelope = null;
+    try {
+      Map<String,List<String>> parameters = uriDecoder.getParameters();
+      List<String> rawTimeout = parameters.get(TIMEOUT);
+      if(rawTimeout.size() != 1) 
+        throw new IllegalArgumentException("single " + TIMEOUT + " parameter required");
+      List<String> rawRequestId = parameters.get(REQUEST_ID);
+      if (rawRequestId.size() != 1)
+        throw new IllegalArgumentException("single " + REQUEST_ID + " parameter required");
+      envelope = new Envelope(Integer.parseInt(rawTimeout.get(0)), rawRequestId.get(0));
+    } catch (Exception parametersException) {
+      Http.response(BAD_REQUEST).
+          containing(parametersException).
+          sendAndClose(channel);
+      return;
+    }
     final String path = uriDecoder.getPath();
     final ServerMethodDescriptor descriptor = methods.get(path);
     if (descriptor == null) {
-      Http.response(HttpResponseStatus.NOT_FOUND).
+      Http.response(NOT_FOUND).
         containing("no method registered on path: " + path).
         sendAndClose(channel);
       return;
@@ -69,7 +87,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     try {
       argument = Util.decodeContent(descriptor.decoder, request.getContent());
     } catch (Exception decoderException) {
-      Http.response(HttpResponseStatus.BAD_REQUEST).
+      Http.response(BAD_REQUEST).
           containing(decoderException).
           sendAndClose(channel);
       return;
@@ -83,12 +101,12 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
           try {
             try {
               Object result = callFuture.get();
-              Http.response(HttpResponseStatus.OK).
+              Http.response(OK).
                   containing(descriptor.encoder.getContentType(), descriptor.encoder.toBytes(result)).
                   sendAndClose(channel);
             } catch (ExecutionException futureException) {
               logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
-              Http.response(HttpResponseStatus.INTERNAL_SERVER_ERROR).
+              Http.response(INTERNAL_SERVER_ERROR).
                   containing(futureException.getCause()).
                   sendAndClose(channel);
             }
@@ -110,7 +128,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
         }
       });
     } catch (Exception callException) {
-      Http.response(HttpResponseStatus.INTERNAL_SERVER_ERROR).
+      Http.response(INTERNAL_SERVER_ERROR).
           containing(callException).
           sendAndClose(channel);
     }
