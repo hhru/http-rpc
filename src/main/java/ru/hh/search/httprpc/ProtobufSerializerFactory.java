@@ -5,6 +5,7 @@ import com.google.protobuf.Message;
 import java.lang.reflect.Method;
 
 public class ProtobufSerializerFactory implements SerializerFactory<Message>{
+  @SuppressWarnings({"unchecked"})
   @Override
   public <T extends Message> Serializer<T> createForClass(Class<T> clazz) {
     try {

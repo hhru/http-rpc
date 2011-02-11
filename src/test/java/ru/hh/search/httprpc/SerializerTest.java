@@ -9,13 +9,13 @@ public class SerializerTest {
   public Object[][] serializers() {
     return new Object[][] {
       {new JavaSerializer(), new Object[] {"hello"}},
-      {new ProtobufSerializer(Messages.Request.getDefaultInstance()), 
+      {new ProtobufSerializer<Messages.Request>(Messages.Request.getDefaultInstance()), 
         new Object[] {Messages.Request.newBuilder().setRequest("hello").build()}}
     };
   }
   
   @Test(dataProvider = "serializers")
-  public void fromTo(Serializer serializer, Object[] objects) {
+  public void fromTo(Serializer<? super Object> serializer, Object[] objects) {
     for (Object object : objects) {
       byte[] bytes = serializer.toBytes(object);
       assertEquals(serializer.fromBytes(bytes, 0, bytes.length), object);

@@ -17,6 +17,7 @@ public class ProtobufSerializer<T extends Message> implements Serializer<T> {
     return "application/x-protobuf";
   }
 
+  @SuppressWarnings({"unchecked"})
   @Override
   public T fromInputStream(InputStream stream) {
     try {
@@ -31,6 +32,7 @@ public class ProtobufSerializer<T extends Message> implements Serializer<T> {
       return object.toByteArray();
   }
 
+  @SuppressWarnings({"unchecked"})
   @Override
   public T fromBytes(byte[] bytes, int offset, int length) {
     try {
