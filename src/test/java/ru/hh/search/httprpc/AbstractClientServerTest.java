@@ -3,7 +3,6 @@ package ru.hh.search.httprpc;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.testng.annotations.AfterMethod;
@@ -27,7 +26,7 @@ public abstract class AbstractClientServerTest {
 
   @BeforeMethod
   public void start() throws UnknownHostException {
-    TcpOptions serverOptions = TcpOptions.create().setLocalAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0));
+    TcpOptions serverOptions = TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0));
     serverMethodExecutor = Executors.newFixedThreadPool(serverMethodThreads);
     server = new NettyServer(serverOptions, basePath, ioThreads, serializerFactory());
     server.startAndWait();
