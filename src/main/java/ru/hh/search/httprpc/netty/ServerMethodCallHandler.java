@@ -92,7 +92,6 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
       return;
     }
     try {
-      @SuppressWarnings({"unchecked"}) 
       final ListenableFuture callFuture = descriptor.method.call(envelope, argument);
       Runnable onCallComplete = new Runnable() {
         @Override
