@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -25,6 +24,7 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.search.httprpc.CallingThreadExecutor;
 import ru.hh.search.httprpc.Envelope;
 import ru.hh.search.httprpc.Http;
 import static ru.hh.search.httprpc.HttpRpcNames.REQUEST_ID;
@@ -36,12 +36,10 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
   
   private final ChannelGroup allChannels;
   private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods;
-  private final ExecutorService methodCallbackExecutor;
 
-  ServerMethodCallHandler(ChannelGroup allChannels, ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods, ExecutorService methodCallbackExecutor) {
+  ServerMethodCallHandler(ChannelGroup allChannels, ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods) {
     this.allChannels = allChannels;
     this.methods = methods;
-    this.methodCallbackExecutor = methodCallbackExecutor;
   }
 
   @Override
@@ -108,7 +106,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
           }
         }
       };
-      callFuture.addListener(onCallComplete, methodCallbackExecutor);
+      callFuture.addListener(onCallComplete, CallingThreadExecutor.instance());
       channel.getCloseFuture().addListener(new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {

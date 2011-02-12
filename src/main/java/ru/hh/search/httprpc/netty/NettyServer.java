@@ -1,11 +1,9 @@
 package ru.hh.search.httprpc.netty;
 
+import com.google.common.collect.MapMaker;
 import com.google.common.util.concurrent.AbstractService;
-import com.google.common.util.concurrent.MoreExecutors;
 import java.net.InetSocketAddress;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -25,15 +23,12 @@ import ru.hh.search.httprpc.SerializerFactory;
 import ru.hh.search.httprpc.ServerMethod;
 
 public class NettyServer extends AbstractService {
-  
   public static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
   
   private final ServerBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
-  private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods = 
-    new ConcurrentHashMap<String, ServerMethodDescriptor<? super Object, ? super Object>>();
+  private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods = new MapMaker().makeMap();
   private final String basePath;
-  private final ExecutorService methodCallbackExecutor = MoreExecutors.sameThreadExecutor();
   private final SerializerFactory serializerFactory;
   volatile private Channel serverChannel;
   
@@ -52,7 +47,7 @@ public class NettyServer extends AbstractService {
         return Channels.pipeline(
           new HttpRequestDecoder(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
           new HttpResponseEncoder(),
-          new ServerMethodCallHandler(allChannels, methods, methodCallbackExecutor));
+          new ServerMethodCallHandler(allChannels, methods));
       }
     });
     this.basePath = basePath;
@@ -85,7 +80,6 @@ public class NettyServer extends AbstractService {
       for (Channel channel : allChannels) {
         channel.getCloseFuture().awaitUninterruptibly();
       }
-      methodCallbackExecutor.shutdown();
       bootstrap.releaseExternalResources();
       logger.info("stopped");
       notifyStopped();
@@ -102,5 +96,4 @@ public class NettyServer extends AbstractService {
       new ServerMethodDescriptor(method, serializerFactory.createForClass(signature.outputClass), 
         serializerFactory.createForClass(signature.inputClass)));
   }
-
 }
