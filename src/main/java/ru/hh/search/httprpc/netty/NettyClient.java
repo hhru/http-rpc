@@ -71,11 +71,11 @@ public class NettyClient  extends AbstractService {
 
   @Override
   protected void doStop() {
-    logger.debug("stopping");
+    logger.trace("stopping");
     try {
       allChannels.close().awaitUninterruptibly();
       bootstrap.releaseExternalResources();
-      logger.info("stopped");
+      logger.trace("stopped");
       notifyStopped();
     } catch (RuntimeException e) {
       logger.error("shutdown failed", e);

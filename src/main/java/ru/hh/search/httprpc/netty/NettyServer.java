@@ -60,10 +60,10 @@ public class NettyServer extends AbstractService {
 
   @Override
   protected void doStart() {
-    logger.debug("starting");
+    logger.trace("starting");
     try {
       serverChannel = bootstrap.bind();
-      logger.info("started");
+      logger.trace("started");
       notifyStarted();
     } catch (RuntimeException e){
       logger.error("can't start", e);
@@ -74,14 +74,14 @@ public class NettyServer extends AbstractService {
 
   @Override
   protected void doStop() {
-    logger.debug("stopping");
+    logger.trace("stopping");
     try {
       serverChannel.close().awaitUninterruptibly();
       for (Channel channel : allChannels) {
         channel.getCloseFuture().awaitUninterruptibly();
       }
       bootstrap.releaseExternalResources();
-      logger.info("stopped");
+      logger.trace("stopped");
       notifyStopped();
     } catch (RuntimeException e) {
       logger.error("can't stop", e);
