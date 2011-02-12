@@ -18,17 +18,18 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.Envelope;
 import ru.hh.search.httprpc.Http;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import static ru.hh.search.httprpc.HttpRpcNames.REQUEST_ID;
 import static ru.hh.search.httprpc.HttpRpcNames.TIMEOUT;
+import ru.hh.search.httprpc.SerializationException;
 
 class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
   public static final Logger logger = LoggerFactory.getLogger(ServerMethodCallHandler.class);
@@ -82,37 +83,28 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
         sendAndClose(channel);
       return;
     }
-    Object argument;
     try {
-      argument = Util.decodeContent(descriptor.decoder, request.getContent());
-    } catch (Exception decoderException) {
-      Http.response(BAD_REQUEST).
-          containing(decoderException).
-          sendAndClose(channel);
-      return;
-    }
-    try {
-      final ListenableFuture callFuture = descriptor.method.call(envelope, argument);
+      final ListenableFuture callFuture = descriptor.method.call(envelope, descriptor.decoder.deserialize(request.getContent()));
       Runnable onCallComplete = new Runnable() {
         @Override
         public void run() {
           try {
-            try {
-              Object result = callFuture.get();
-              Http.response(OK).
-                  containing(descriptor.encoder.getContentType(), descriptor.encoder.toBytes(result)).
-                  sendAndClose(channel);
-            } catch (ExecutionException futureException) {
-              logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
-              Http.response(INTERNAL_SERVER_ERROR).
-                  containing(futureException.getCause()).
-                  sendAndClose(channel);
-            }
+            Object result = callFuture.get();
+            Http.response(OK).
+                containing(descriptor.encoder.getContentType(), descriptor.encoder.serialize(result)).
+                sendAndClose(channel);
+          } catch (SerializationException e) {
+            Http.response(INTERNAL_SERVER_ERROR).
+                containing(e).
+                sendAndClose(channel);
+          } catch (ExecutionException futureException) {
+            logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
+            Http.response(INTERNAL_SERVER_ERROR).
+                containing(futureException.getCause()).
+                sendAndClose(channel);
           } catch (CancellationException e) {
             // nothing to do, channel has been closed already 
-          } catch (InterruptedException e) {
-            logger.error("got impossible exception, closing channel", e);
-            channel.close();
+          } catch (InterruptedException ignored) {
           }
         }
       };
@@ -125,6 +117,10 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
           }
         }
       });
+    } catch (SerializationException decoderException) {
+      Http.response(BAD_REQUEST).
+          containing(decoderException).
+          sendAndClose(channel);
     } catch (Exception callException) {
       Http.response(INTERNAL_SERVER_ERROR).
           containing(callException).

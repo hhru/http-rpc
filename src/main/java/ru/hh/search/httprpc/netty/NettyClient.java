@@ -93,10 +93,10 @@ public class NettyClient  extends AbstractService {
 
   private class NettyClientMethod<I, O> implements ClientMethod<I, O> {
     private final String fullPath;
-    private final Serializer<? super I> encoder;
-    private final Serializer<? extends O> decoder;
+    private final Serializer<I> encoder;
+    private final Serializer<O> decoder;
 
-    private NettyClientMethod(String fullPath, Serializer<? super I> encoder, Serializer<? extends O> decoder) {
+    private NettyClientMethod(String fullPath, Serializer<I> encoder, Serializer<O> decoder) {
       this.fullPath = fullPath;
       this.encoder = encoder;
       this.decoder = decoder;
@@ -121,7 +121,7 @@ public class NettyClient  extends AbstractService {
                   Http.uri(fullPath).
                       param(HttpRpcNames.TIMEOUT, envelope.timeoutMilliseconds).
                       param(HttpRpcNames.REQUEST_ID, envelope.requestId)
-                ).containing(encoder.getContentType(), encoder.toBytes(input)).
+                ).containing(encoder.getContentType(), encoder.serialize(input)).
                 sendTo(channel);
           } else {
             logger.debug("connection failed", future.getCause());
@@ -145,7 +145,7 @@ public class NettyClient  extends AbstractService {
         ChannelBuffer content = response.getContent();
         if (response.getStatus().equals(HttpResponseStatus.OK)) {
           try {
-            O result = Util.decodeContent(decoder, content);
+            O result = decoder.deserialize(content);
             future.set(result);
           } catch (RuntimeException e) {
             logger.debug("failed to decode response", e);

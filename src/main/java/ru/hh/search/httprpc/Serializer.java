@@ -1,10 +1,10 @@
 package ru.hh.search.httprpc;
 
-import java.io.InputStream;
+import org.jboss.netty.buffer.ChannelBuffer;
 
 public interface Serializer<T> {
   String getContentType();
-  byte[] toBytes(T object);
-  T fromBytes(byte[] bytes, int offset, int length);
-  T fromInputStream(InputStream stream);
+
+  ChannelBuffer serialize(T object) throws SerializationException;
+  T deserialize(ChannelBuffer serialForm) throws SerializationException;
 }
