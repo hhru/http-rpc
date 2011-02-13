@@ -41,6 +41,7 @@ public class Nodes {
     }
 
     private void callNext(final Iterator<I> targets) {
+      // This (and another sync in done()) both protects the list and ensures no new invocations after finishing with Future for whatever reason
       synchronized(invocations) {
         if (!isDone() && targets.hasNext()) {
           I target = targets.next();
