@@ -33,13 +33,13 @@ import org.slf4j.LoggerFactory;
 import ru.hh.search.httprpc.BadResponseException;
 import ru.hh.search.httprpc.ClientMethod;
 import ru.hh.search.httprpc.Envelope;
-import ru.hh.search.httprpc.Http;
 import ru.hh.search.httprpc.HttpRpcNames;
 import ru.hh.search.httprpc.RPC;
 import ru.hh.search.httprpc.Serializer;
 import ru.hh.search.httprpc.SerializerFactory;
+import ru.hh.search.httprpc.util.Http;
 
-public class NettyClient  extends AbstractService {
+public class NettyClient extends AbstractService {
   public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
   
   private final String basePath;

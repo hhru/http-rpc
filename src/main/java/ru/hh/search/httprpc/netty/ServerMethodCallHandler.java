@@ -4,9 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -24,12 +22,12 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.search.httprpc.CallingThreadExecutor;
 import ru.hh.search.httprpc.Envelope;
-import ru.hh.search.httprpc.Http;
 import static ru.hh.search.httprpc.HttpRpcNames.REQUEST_ID;
 import static ru.hh.search.httprpc.HttpRpcNames.TIMEOUT;
 import ru.hh.search.httprpc.SerializationException;
+import ru.hh.search.httprpc.util.FutureListener;
+import ru.hh.search.httprpc.util.Http;
 
 class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
   public static final Logger logger = LoggerFactory.getLogger(ServerMethodCallHandler.class);
@@ -83,11 +81,9 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     }
     try {
       final ListenableFuture callFuture = descriptor.method.call(envelope, descriptor.decoder.deserialize(request.getContent()));
-      Runnable onCallComplete = new Runnable() {
-        @Override
-        public void run() {
+      new FutureListener<Object>(callFuture) {
+        protected void success(Object result) {
           try {
-            Object result = callFuture.get();
             Http.response(OK).
                 containing(descriptor.encoder.getContentType(), descriptor.encoder.serialize(result)).
                 sendAndClose(channel);
@@ -95,18 +91,16 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
             Http.response(INTERNAL_SERVER_ERROR).
                 containing(e).
                 sendAndClose(channel);
-          } catch (ExecutionException futureException) {
-            logger.error(String.format("method on %s threw an exception", path), futureException.getCause());
-            Http.response(INTERNAL_SERVER_ERROR).
-                containing(futureException.getCause()).
-                sendAndClose(channel);
-          } catch (CancellationException e) {
-            // nothing to do, channel has been closed already 
-          } catch (InterruptedException ignored) {
           }
         }
+
+        protected void exception(Throwable exception) {
+          logger.error(String.format("method on %s threw an exception", path), exception);
+          Http.response(INTERNAL_SERVER_ERROR).
+              containing(exception).
+              sendAndClose(channel);
+        }
       };
-      callFuture.addListener(onCallComplete, CallingThreadExecutor.instance());
       channel.getCloseFuture().addListener(new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {

@@ -1,24 +1,25 @@
 package ru.hh.search.httprpc;
 
-import static com.google.common.collect.Lists.newArrayList;
-import com.google.common.util.concurrent.AbstractListenableFuture;
+import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import static java.lang.String.format;
+import static java.lang.System.out;
 import java.net.InetSocketAddress;
 import static java.util.Arrays.asList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
-import org.jboss.netty.util.TimerTask;
 import ru.hh.search.httprpc.netty.NettyClient;
 import ru.hh.search.httprpc.netty.NettyServer;
 import ru.hh.search.httprpc.netty.TcpOptions;
+import ru.hh.search.httprpc.util.FutureListener;
+import ru.hh.search.httprpc.util.Nodes;
+
+interface SampleAPI {
+  RPC<String, Integer> COUNT_MATCHES = RPC.signature("countMatches", String.class, Integer.class);
+}
 
 public class Example {
   public static void main(String[] args) {
@@ -31,7 +32,7 @@ public class Example {
       }
     });
 
-    ClientMethod<String, Integer> countMatches = client.createMethod(SampleAPI.COUNT_MATCHES);
+    final ClientMethod<String, Integer> countMatches = client.createMethod(SampleAPI.COUNT_MATCHES);
 
     InetSocketAddress s0m0 = new InetSocketAddress("127.0.0.1", 9090);
     InetSocketAddress s0m1 = new InetSocketAddress("127.0.0.1", 9090);
@@ -44,103 +45,48 @@ public class Example {
         asList(s1m0, s1m1)
     );
 
-    Envelope envelope = new Envelope(100, "requestid");
-    String query = "query";
+    Timer timer = new HashedWheelTimer(5, MILLISECONDS);
 
-    Iterator<InetSocketAddress> s0iterator = geometry.get(0).iterator();
+    final Envelope envelope = new Envelope(100, "requestid");
+    final String query = "query";
 
-    ListenableFuture<Integer> result = new ShardCall<String, Integer>(s0iterator, countMatches, envelope, query);
-  }
-}
+    List<InetSocketAddress> s0 = geometry.get(0);
 
-class ShardCall<I, O> extends AbstractListenableFuture<O> {
-  private static final Timer TIMER = new HashedWheelTimer(10, MILLISECONDS);
-
-  private final ClientMethod<I, O> method;
-  private final Envelope envelope;
-  private final I input;
-
-  private final List<Invocation> invocations = newArrayList();
-
-  public ShardCall(Iterator<InetSocketAddress> mirrors, ClientMethod<I, O> method, Envelope envelope, I input) {
-    this.method = method;
-    this.envelope = envelope;
-    this.input = input;
-
-    callNext(mirrors);
+    ListenableFuture<Integer> result = Nodes.callAny(
+        qweqwe(countMatches, envelope, query),
+        s0,
+        20, MILLISECONDS,
+        timer
+    );
   }
 
-  // Todo: fix   future.get() ExecutionException VS timeout    callNext race
-  private void callNext(final Iterator<InetSocketAddress> mirrors) {
-    if (mirrors.hasNext()) {
-      InetSocketAddress host = mirrors.next();
-
-      final ListenableFuture<O> future = method.call(host, envelope, input);
-
-      future.addListener(
-          new Runnable() {
-            public void run() {
-              try {
-                set(future.get());
-              } catch (ExecutionException e) {
-                callNext(mirrors);
-              } catch (InterruptedException ignore) {
-              } catch (CancellationException ignore) {
-              }
-            }
-          },
-          CallingThreadExecutor.instance()
-      );
-
-      Timeout timeout = TIMER.newTimeout(
-          new TimerTask() {
-            public void run(Timeout timeout) throws Exception {
-              callNext(mirrors);
-            }
-          },
-          envelope.timeoutMilliseconds, MILLISECONDS
-      );
-
-      Invocation invocation = new Invocation(future, timeout);
-      synchronized (invocations) {
-        if (!isDone())
-          invocations.add(invocation);
-        else
-          invocation.cancel();
+  private static <I, O> Function<InetSocketAddress, ListenableFuture<O>> qweqwe(final ClientMethod<I, O> method, final Envelope envelope, final I input) {
+    return new Function<InetSocketAddress, ListenableFuture<O>>() {
+      public ListenableFuture<O> apply(final InetSocketAddress address) {
+        return method.call(address, envelope, input);
       }
-    }
+    };
   }
 
-  public boolean cancel(boolean mayInterruptIfRunning) {
-    return cancel();
+  private static <I, O> Function<InetSocketAddress, ListenableFuture<O>> qweqweTracked(final ClientMethod<I, O> method, final Envelope envelope, final I input) {
+    return new Function<InetSocketAddress, ListenableFuture<O>>() {
+      public ListenableFuture<O> apply(final InetSocketAddress address) {
+        final ListenableFuture<O> future = method.call(address, envelope, input);
+        new FutureListener<O>(future) {
+          protected void success(O result) {
+            out.println(format("Log: %s -> %s", address, result));
+          }
+
+          protected void exception(Throwable exception) {
+            out.println(format("Log: %s -> %s", address, exception.getMessage()));
+          }
+
+          protected void cancelled() {
+            out.println(format("Log: %s -> cancelled", address));
+          }
+        };
+        return future;
+      }
+    };
   }
-
-
-  protected void done() {
-    synchronized (invocations) {
-      for (Invocation invocation : invocations)
-        invocation.cancel();
-    }
-
-    super.done(); // Run listeners
-  }
-
-  static class Invocation {
-    private final Future<?> future;
-    private final Timeout timeout;
-
-    public Invocation(Future<?> future, Timeout timeout) {
-      this.future = future;
-      this.timeout = timeout;
-    }
-
-    public void cancel() {
-      future.cancel(true);
-      timeout.cancel();
-    }
-  }
-}
-
-interface SampleAPI {
-  RPC<String, Integer> COUNT_MATCHES = RPC.signature("countMatches", String.class, Integer.class);
 }

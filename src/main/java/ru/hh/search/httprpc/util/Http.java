@@ -1,4 +1,4 @@
-package ru.hh.search.httprpc;
+package ru.hh.search.httprpc.util;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
