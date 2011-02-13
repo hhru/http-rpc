@@ -41,35 +41,31 @@ public class Nodes {
     }
 
     private void callNext(final Iterator<I> targets) {
-      if (targets.hasNext()) {
-        I target = targets.next();
+      synchronized(invocations) {
+        if (!isDone() && targets.hasNext()) {
+          I target = targets.next();
 
-        final Runnable callNextOnce = new RunnableOnce() {
-          protected void doRun() {
-            callNext(targets);
-          }
-        };
+          final Runnable callNextOnce = new RunnableOnce() {
+            protected void doRun() {
+              callNext(targets);
+            }
+          };
 
-        final ListenableFuture<O> future = call.apply(target);
+          final ListenableFuture<O> future = call.apply(target);
 
-        new FutureListener<O>(future) {
-          protected void success(O result) {
-            set(result);
-          }
+          new FutureListener<O>(future) {
+            protected void success(O result) {
+              set(result);
+            }
 
-          protected void exception(Throwable exception) {
-            callNextOnce.run();
-          }
-        };
+            protected void exception(Throwable exception) {
+              callNextOnce.run();
+            }
+          };
 
-        Timeout timeout = timer.newTimeout(asTimerTask(callNextOnce), nextTargetDelay, unit);
+          Timeout timeout = timer.newTimeout(asTimerTask(callNextOnce), nextTargetDelay, unit);
 
-        Invocation invocation = new Invocation(future, timeout);
-        synchronized (invocations) {
-          if (!isDone())
-            invocations.add(invocation);
-          else
-            invocation.cancel();
+          invocations.add(new Invocation(future, timeout));
         }
       }
     }
