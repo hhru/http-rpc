@@ -24,12 +24,16 @@ public abstract class FutureListener<T> implements Runnable {
   public void run() {
     try {
       success(future.get());
+      done();
     } catch (ExecutionException e) {
       exception(e.getCause());
+      done();
     } catch (CancellationException e) {
       cancelled();
+      done();
     } catch (InterruptedException e) {
       interrupted(e);
+      done();
     }
   }
 
@@ -42,4 +46,6 @@ public abstract class FutureListener<T> implements Runnable {
   protected void interrupted(InterruptedException e) {
     log.error("Wtf?! A completed future's get() got interrupted", e);
   }
+
+  protected void done() {}
 }

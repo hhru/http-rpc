@@ -1,14 +1,18 @@
 package ru.hh.search.httprpc.util;
 
 import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import static com.google.common.collect.Lists.newArrayList;
 import com.google.common.util.concurrent.AbstractListenableFuture;
 import com.google.common.util.concurrent.ListenableFuture;
+import java.util.ArrayList;
 import java.util.Collection;
+import static java.util.Collections.synchronizedList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import static ru.hh.search.httprpc.util.Timers.asTimerTask;
@@ -19,7 +23,47 @@ public class Nodes {
   }
 
   public static <T, O> ListenableFuture<Collection<O>> callEvery(Function<T, ListenableFuture<O>> call, Iterable<T> targets) {
-    return null;
+    return new CallEvery<T, O>(call, targets);
+  }
+
+  private static class CallEvery<T, O> extends AbstractListenableFuture<Collection<O>> {
+    private final List<Future<O>> futures;
+    private final List<O> results;
+    private final AtomicInteger inFlight;
+
+    public CallEvery(Function<T, ListenableFuture<O>> call, Iterable<T> targets) {
+      futures = synchronizedList(new ArrayList<Future<O>>());
+      results = synchronizedList(new ArrayList<O>());
+      inFlight = new AtomicInteger(Iterables.size(targets));
+
+      for (T target : targets) {
+        ListenableFuture<O> future = call.apply(target);
+        new FutureListener<O>(future) {
+          protected void success(O result) {
+            results.add(result);
+          }
+
+          protected void done() {
+            if (inFlight.decrementAndGet() == 0)
+              set(results);
+          }
+        };
+        futures.add(future);
+      }
+    }
+
+    /**
+     * This method breaks a contract of Future. Instead of actually cancelling it,
+     * it stops further computations and marks future as complete, yielding results
+     * aquired by that moment.
+     * @param mayInterruptIfRunning ignored
+     * @return always true
+     */
+    public boolean cancel(boolean mayInterruptIfRunning) {
+      for(Future<O> future : futures)
+        future.cancel(true);
+      return true;
+    }
   }
 
   private static class CallAny<I, O> extends AbstractListenableFuture<O> {

@@ -7,6 +7,7 @@ import static java.lang.String.format;
 import static java.lang.System.out;
 import java.net.InetSocketAddress;
 import static java.util.Arrays.asList;
+import java.util.Collection;
 import java.util.List;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -14,6 +15,7 @@ import org.jboss.netty.util.Timer;
 import ru.hh.search.httprpc.netty.NettyClient;
 import ru.hh.search.httprpc.netty.NettyServer;
 import ru.hh.search.httprpc.netty.TcpOptions;
+import ru.hh.search.httprpc.util.CallingThreadExecutor;
 import ru.hh.search.httprpc.util.FutureListener;
 import ru.hh.search.httprpc.util.Nodes;
 
@@ -22,7 +24,7 @@ interface SampleAPI {
 }
 
 public class Example {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     NettyClient client = new NettyClient(TcpOptions.create(), "", 2, new JavaSerializerFactory());
     NettyServer server = new NettyServer(TcpOptions.create(), "", 2, new JavaSerializerFactory());
 
@@ -45,22 +47,42 @@ public class Example {
         asList(s1m0, s1m1)
     );
 
-    Timer timer = new HashedWheelTimer(5, MILLISECONDS);
+    final Timer timer = new HashedWheelTimer(5, MILLISECONDS);
 
     final Envelope envelope = new Envelope(100, "requestid");
     final String query = "query";
 
-    List<InetSocketAddress> s0 = geometry.get(0);
+    ListenableFuture<Collection<Integer>> future = Nodes.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
+      public ListenableFuture<Integer> apply(List<InetSocketAddress> targets) {
+        return Nodes.callAny(
+            asFunctionOfHost(countMatches, envelope, query), // optionally - wrapWithTracer(...)
+            targets,
+            20, MILLISECONDS,
+            timer
+        );
+      }
+    }, geometry);
 
-    ListenableFuture<Integer> result = Nodes.callAny(
-        qweqwe(countMatches, envelope, query),
-        s0,
-        20, MILLISECONDS,
-        timer
-    );
+    // This should use a normal executor, as merging can be relatively costly(?) and we're better not do it on a network thread
+    ListenableFuture<Integer> mergedFuture = Futures.compose(future, sampleFoldFunction(), CallingThreadExecutor.instance());
+
+    int result = mergedFuture.get();
+    // ?????
+    // PROFIT!!!
   }
 
-  private static <I, O> Function<InetSocketAddress, ListenableFuture<O>> qweqwe(final ClientMethod<I, O> method, final Envelope envelope, final I input) {
+  private static Function<Collection<Integer>, Integer> sampleFoldFunction() {
+    return new Function<Collection<Integer>, Integer>() {
+      public Integer apply(Collection<Integer> results) {
+        int sum = 0;
+        for (int result : results)
+          sum += result;
+        return sum;
+      }
+    };
+  }
+
+  private static <I, O> Function<InetSocketAddress, ListenableFuture<O>> asFunctionOfHost(final ClientMethod<I, O> method, final Envelope envelope, final I input) {
     return new Function<InetSocketAddress, ListenableFuture<O>>() {
       public ListenableFuture<O> apply(final InetSocketAddress address) {
         return method.call(address, envelope, input);
@@ -68,10 +90,10 @@ public class Example {
     };
   }
 
-  private static <I, O> Function<InetSocketAddress, ListenableFuture<O>> qweqweTracked(final ClientMethod<I, O> method, final Envelope envelope, final I input) {
+  private static <I, O> Function<InetSocketAddress, ListenableFuture<O>> wrapWithTracer(final Function<InetSocketAddress, ListenableFuture<O>> function) {
     return new Function<InetSocketAddress, ListenableFuture<O>>() {
       public ListenableFuture<O> apply(final InetSocketAddress address) {
-        final ListenableFuture<O> future = method.call(address, envelope, input);
+        ListenableFuture<O> future = function.apply(address);
         new FutureListener<O>(future) {
           protected void success(O result) {
             out.println(format("Log: %s -> %s", address, result));
