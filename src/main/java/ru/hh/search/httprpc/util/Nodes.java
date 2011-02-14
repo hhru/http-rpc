@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
-import static ru.hh.search.httprpc.util.Timers.asTimerTask;
+import static ru.hh.search.httprpc.util.TimerTasks.asTimerTask;
 
 public class Nodes {
   public static <T, O> ListenableFuture<O> callAny(Function<T, ListenableFuture<O>> call, Iterable<T> targets, long nextTargetDelay, TimeUnit unit, Timer timer) {

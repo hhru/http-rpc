@@ -18,6 +18,7 @@ import ru.hh.search.httprpc.netty.TcpOptions;
 import ru.hh.search.httprpc.util.CallingThreadExecutor;
 import ru.hh.search.httprpc.util.FutureListener;
 import ru.hh.search.httprpc.util.Nodes;
+import ru.hh.search.httprpc.util.TimerTasks;
 
 interface SampleAPI {
   RPC<String, Integer> COUNT_MATCHES = RPC.signature("countMatches", String.class, Integer.class);
@@ -25,48 +26,49 @@ interface SampleAPI {
 
 public class Example {
   public static void main(String[] args) throws Exception {
-    NettyClient client = new NettyClient(TcpOptions.create(), "", 2, new JavaSerializerFactory());
-    NettyServer server = new NettyServer(TcpOptions.create(), "", 2, new JavaSerializerFactory());
-
-    server.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
+    NettyServer baseServer = new NettyServer(TcpOptions.create(), "", 2, new JavaSerializerFactory());
+    baseServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(Envelope envelope, String argument) {
         return Futures.immediateFuture(argument.length());
       }
     });
 
-    final ClientMethod<String, Integer> countMatches = client.createMethod(SampleAPI.COUNT_MATCHES);
+    NettyClient metaClient = new NettyClient(TcpOptions.create(), "", 2, new JavaSerializerFactory());
+    final ClientMethod<String, Integer> countMatches = metaClient.createMethod(SampleAPI.COUNT_MATCHES);
 
     InetSocketAddress s0m0 = new InetSocketAddress("127.0.0.1", 9090);
     InetSocketAddress s0m1 = new InetSocketAddress("127.0.0.1", 9090);
     InetSocketAddress s0m2 = new InetSocketAddress("127.0.0.1", 9090);
     InetSocketAddress s1m0 = new InetSocketAddress("127.0.0.1", 9090);
     InetSocketAddress s1m1 = new InetSocketAddress("127.0.0.1", 9090);
-
-    List<List<InetSocketAddress>> geometry = asList(
+    final List<List<InetSocketAddress>> geometry = asList(
         asList(s0m0, s0m1, s0m2),
         asList(s1m0, s1m1)
     );
 
     final Timer timer = new HashedWheelTimer(5, MILLISECONDS);
 
-    final Envelope envelope = new Envelope(100, "requestid");
-    final String query = "query";
+    NettyServer metaServer = new NettyServer(TcpOptions.create(), "", 2, new JavaSerializerFactory());
+    metaServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
+      public ListenableFuture<Integer> call(final Envelope envelope, final String argument) {
+        ListenableFuture<Collection<Integer>> future = Nodes.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
+          public ListenableFuture<Integer> apply(List<InetSocketAddress> targets) {
+            return Nodes.callAny(
+                asFunctionOfHost(countMatches, envelope, argument), // optionally - wrapWithTracer(...)
+                targets,
+                Math.max(envelope.timeoutMillis / targets.size(), 20), MILLISECONDS,
+                timer
+            );
+          }
+        }, geometry);
 
-    ListenableFuture<Collection<Integer>> future = Nodes.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
-      public ListenableFuture<Integer> apply(List<InetSocketAddress> targets) {
-        return Nodes.callAny(
-            asFunctionOfHost(countMatches, envelope, query), // optionally - wrapWithTracer(...)
-            targets,
-            20, MILLISECONDS,
-            timer
-        );
+        timer.newTimeout(TimerTasks.cancelFuture(future), envelope.timeoutMillis, MILLISECONDS);
+
+        // This should use a normal executor, as merging can be relatively costly(?) and we're better not do it on a network thread
+        return Futures.compose(future, sampleFoldFunction(), CallingThreadExecutor.instance());
       }
-    }, geometry);
+    });
 
-    // This should use a normal executor, as merging can be relatively costly(?) and we're better not do it on a network thread
-    ListenableFuture<Integer> mergedFuture = Futures.compose(future, sampleFoldFunction(), CallingThreadExecutor.instance());
-
-    int result = mergedFuture.get();
     // ?????
     // PROFIT!!!
   }
@@ -90,7 +92,7 @@ public class Example {
     };
   }
 
-  private static <I, O> Function<InetSocketAddress, ListenableFuture<O>> wrapWithTracer(final Function<InetSocketAddress, ListenableFuture<O>> function) {
+  private static <O> Function<InetSocketAddress, ListenableFuture<O>> wrapWithTracer(final Function<InetSocketAddress, ListenableFuture<O>> function) {
     return new Function<InetSocketAddress, ListenableFuture<O>>() {
       public ListenableFuture<O> apply(final InetSocketAddress address) {
         ListenableFuture<O> future = function.apply(address);

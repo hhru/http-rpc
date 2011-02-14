@@ -119,7 +119,7 @@ public class NettyClient extends AbstractService {
             Http.request(
                   HttpMethod.POST,
                   Http.uri(fullPath).
-                      param(HttpRpcNames.TIMEOUT, envelope.timeoutMilliseconds).
+                      param(HttpRpcNames.TIMEOUT, envelope.timeoutMillis).
                       param(HttpRpcNames.REQUEST_ID, envelope.requestId)
                 ).containing(encoder.getContentType(), encoder.serialize(input)).
                 sendTo(channel);
