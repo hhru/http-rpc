@@ -6,20 +6,20 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 
-public class ProtobufSerializerFactory implements SerializerFactory{
+public class ProtobufSerializer implements Serializer {
   @SuppressWarnings({"unchecked"})
-  public <T> Serializer<T> createForClass(Class<T> clazz) {
+  public <T> ForClass<T> forClass(Class<T> clazz) {
     try {
-      return new ProtobufSerializer<T>((Message) clazz.getMethod("getDefaultInstance").invoke(null));
+      return new ForClass<T>((Message) clazz.getMethod("getDefaultInstance").invoke(null));
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
   }
 
-  private static class ProtobufSerializer<T> implements Serializer<T> {
+  private static class ForClass<T> implements Serializer.ForClass<T> {
     private final Message prototype;
 
-    public ProtobufSerializer(Message prototype) {
+    public ForClass(Message prototype) {
       this.prototype = prototype;
     }
 

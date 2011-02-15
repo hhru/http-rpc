@@ -12,9 +12,6 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
-import ru.hh.search.httprpc.netty.NettyClient;
-import ru.hh.search.httprpc.netty.NettyServer;
-import ru.hh.search.httprpc.netty.TcpOptions;
 import ru.hh.search.httprpc.util.CallingThreadExecutor;
 import ru.hh.search.httprpc.util.FutureListener;
 import ru.hh.search.httprpc.util.Nodes;
@@ -26,14 +23,14 @@ interface SampleAPI {
 
 public class Example {
   public static void main(String[] args) throws Exception {
-    NettyServer baseServer = new NettyServer(TcpOptions.create(), "", 2, new JavaSerializerFactory());
+    RPCServer baseServer = new RPCServer(TcpOptions.create(), "", 2, new JavaSerializer());
     baseServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(Envelope envelope, String argument) {
         return Futures.immediateFuture(argument.length());
       }
     });
 
-    NettyClient metaClient = new NettyClient(TcpOptions.create(), "", 2, new JavaSerializerFactory());
+    RPCClient metaClient = new RPCClient(TcpOptions.create(), "", 2, new JavaSerializer());
     final ClientMethod<String, Integer> countMatches = metaClient.createMethod(SampleAPI.COUNT_MATCHES);
 
     InetSocketAddress s0m0 = new InetSocketAddress("127.0.0.1", 9090);
@@ -48,7 +45,7 @@ public class Example {
 
     final Timer timer = new HashedWheelTimer(5, MILLISECONDS);
 
-    NettyServer metaServer = new NettyServer(TcpOptions.create(), "", 2, new JavaSerializerFactory());
+    RPCServer metaServer = new RPCServer(TcpOptions.create(), "", 2, new JavaSerializer());
     metaServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(final Envelope envelope, final String argument) {
         ListenableFuture<Collection<Integer>> future = Nodes.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {

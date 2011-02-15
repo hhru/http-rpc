@@ -1,4 +1,4 @@
-package ru.hh.search.httprpc.netty;
+package ru.hh.search.httprpc;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -22,10 +22,8 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.search.httprpc.Envelope;
 import static ru.hh.search.httprpc.HttpRpcNames.REQUEST_ID;
 import static ru.hh.search.httprpc.HttpRpcNames.TIMEOUT;
-import ru.hh.search.httprpc.SerializationException;
 import ru.hh.search.httprpc.util.FutureListener;
 import ru.hh.search.httprpc.util.Http;
 

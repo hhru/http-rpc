@@ -1,4 +1,4 @@
-package ru.hh.search.httprpc.netty;
+package ru.hh.search.httprpc;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;

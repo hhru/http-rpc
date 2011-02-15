@@ -3,14 +3,14 @@ package ru.hh.search.httprpc;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ExecutionException;
-import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
+import org.testng.annotations.Test;
 
 public class ProtobufTest extends AbstractClientServerTest {
 
   @Override
-  protected SerializerFactory serializerFactory() {
-    return new ProtobufSerializerFactory();
+  protected Serializer serializerFactory() {
+    return new ProtobufSerializer();
   }
   
   @Test

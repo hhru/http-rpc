@@ -1,8 +1,7 @@
-package ru.hh.search.httprpc.netty;
+package ru.hh.search.httprpc;
 
 import com.google.common.util.concurrent.AbstractListenableFuture;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
 
 class ClientFuture<V> extends AbstractListenableFuture<V> {
   private final Channel channel;

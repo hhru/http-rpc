@@ -1,4 +1,4 @@
-package ru.hh.search.httprpc.netty;
+package ru.hh.search.httprpc;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
@@ -30,26 +30,19 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.search.httprpc.BadResponseException;
-import ru.hh.search.httprpc.ClientMethod;
-import ru.hh.search.httprpc.Envelope;
-import ru.hh.search.httprpc.HttpRpcNames;
-import ru.hh.search.httprpc.RPC;
-import ru.hh.search.httprpc.Serializer;
-import ru.hh.search.httprpc.SerializerFactory;
 import ru.hh.search.httprpc.util.Http;
 
-public class NettyClient extends AbstractService {
-  public static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
+public class RPCClient extends AbstractService {
+  public static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
   
   private final String basePath;
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
-  private final SerializerFactory serializerFactory;
+  private final Serializer serializer;
 
-  public NettyClient(TcpOptions options, String basePath, int ioThreads, SerializerFactory serializerFactory) {
+  public RPCClient(TcpOptions options, String basePath, int ioThreads, Serializer serializer) {
     this.basePath = basePath;
-    this.serializerFactory = serializerFactory;
+    this.serializer = serializer;
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
     bootstrap = new ClientBootstrap(factory);
     bootstrap.setOptions(options.toMap());
@@ -86,17 +79,17 @@ public class NettyClient extends AbstractService {
   public <I, O> ClientMethod<I, O> createMethod(RPC<I, O> signature) {
     return new NettyClientMethod<I, O>(
         basePath + signature.path,
-        serializerFactory.createForClass(signature.inputClass),
-        serializerFactory.createForClass(signature.outputClass)
+        serializer.forClass(signature.inputClass),
+        serializer.forClass(signature.outputClass)
     );
   }
 
   private class NettyClientMethod<I, O> implements ClientMethod<I, O> {
     private final String fullPath;
-    private final Serializer<I> encoder;
-    private final Serializer<O> decoder;
+    private final Serializer.ForClass<I> encoder;
+    private final Serializer.ForClass<O> decoder;
 
-    private NettyClientMethod(String fullPath, Serializer<I> encoder, Serializer<O> decoder) {
+    private NettyClientMethod(String fullPath, Serializer.ForClass<I> encoder, Serializer.ForClass<O> decoder) {
       this.fullPath = fullPath;
       this.encoder = encoder;
       this.decoder = decoder;

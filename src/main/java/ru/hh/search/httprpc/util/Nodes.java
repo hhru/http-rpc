@@ -1,6 +1,7 @@
 package ru.hh.search.httprpc.util;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import static com.google.common.collect.Lists.newArrayList;
 import com.google.common.util.concurrent.AbstractListenableFuture;
@@ -45,7 +46,7 @@ public class Nodes {
 
           protected void done() {
             if (inFlight.decrementAndGet() == 0)
-              set(results);
+              set(ImmutableList.copyOf(results));
           }
         };
         futures.add(future);

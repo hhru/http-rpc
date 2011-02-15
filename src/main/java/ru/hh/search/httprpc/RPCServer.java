@@ -1,4 +1,4 @@
-package ru.hh.search.httprpc.netty;
+package ru.hh.search.httprpc;
 
 import com.google.common.collect.MapMaker;
 import com.google.common.util.concurrent.AbstractService;
@@ -18,26 +18,23 @@ import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.search.httprpc.RPC;
-import ru.hh.search.httprpc.SerializerFactory;
-import ru.hh.search.httprpc.ServerMethod;
 
-public class NettyServer extends AbstractService {
-  public static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
+public class RPCServer extends AbstractService {
+  public static final Logger logger = LoggerFactory.getLogger(RPCServer.class);
   
   private final ServerBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
   private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods = new MapMaker().makeMap();
   private final String basePath;
-  private final SerializerFactory serializerFactory;
+  private final Serializer serializer;
   volatile private Channel serverChannel;
   
   /**
    * @param options
    * @param ioThreads the maximum number of I/O worker threads for {@link org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory#NioServerSocketChannelFactory(java.util.concurrent.Executor, java.util.concurrent.Executor, int)}
-   * @param serializerFactory
+   * @param serializer
    */
-  public NettyServer(TcpOptions options, String basePath, int ioThreads, SerializerFactory serializerFactory) {
+  public RPCServer(TcpOptions options, String basePath, int ioThreads, Serializer serializer) {
     ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), 
       ioThreads);
     bootstrap = new ServerBootstrap(factory);
@@ -51,7 +48,7 @@ public class NettyServer extends AbstractService {
       }
     });
     this.basePath = basePath;
-    this.serializerFactory = serializerFactory;
+    this.serializer = serializer;
   }
   
   public InetSocketAddress getLocalAddress() {
@@ -93,7 +90,7 @@ public class NettyServer extends AbstractService {
   @SuppressWarnings({"unchecked"})
   public <I, O> void register(RPC<I, O> signature, ServerMethod<I, O> method) {
     methods.put(basePath + signature.path, 
-      new ServerMethodDescriptor(method, serializerFactory.createForClass(signature.outputClass), 
-        serializerFactory.createForClass(signature.inputClass)));
+      new ServerMethodDescriptor(method, serializer.forClass(signature.outputClass),
+        serializer.forClass(signature.inputClass)));
   }
 }
