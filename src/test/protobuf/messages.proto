@@ -1,6 +1,6 @@
 package hh.search.httprpc;
 
-option java_package = "ru.hh.search.httprpc";
+option java_package = "ru.hh.httprpc";
 
 message Request {
   required string request = 1;

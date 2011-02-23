@@ -5,7 +5,7 @@
     </encoder>
   </appender>
   
-  <logger name="ru.hh.search.httprpc" level="DEBUG"/>
+  <logger name="ru.hh.httprpc" level="DEBUG"/>
   
   <root level="INFO">
     <appender-ref ref="STDOUT"/>
