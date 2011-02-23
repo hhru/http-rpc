@@ -49,9 +49,9 @@ public class RPCClient extends AbstractService {
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       @Override
       public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = Channels.pipeline();
-        pipeline.addLast("codec", new HttpClientCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE));
-        return pipeline;
+        return Channels.pipeline(
+            new HttpClientCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE)
+        );
       }
     });
     start();
