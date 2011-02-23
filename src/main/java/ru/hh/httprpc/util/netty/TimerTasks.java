@@ -1,4 +1,4 @@
-package ru.hh.httprpc.util;
+package ru.hh.httprpc.util.netty;
 
 import java.util.concurrent.Future;
 import org.jboss.netty.util.Timeout;

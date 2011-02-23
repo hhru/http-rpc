@@ -30,7 +30,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.httprpc.util.Http;
+import ru.hh.httprpc.util.netty.Http;
 
 public class RPCClient extends AbstractService {
   public static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
@@ -110,11 +110,11 @@ public class RPCClient extends AbstractService {
           if (future.isSuccess()) {
             channel.getPipeline().addLast("handler", new ClientHandler(clientFuture));
             Http.request(
-                  HttpMethod.POST,
-                  Http.uri(fullPath).
-                      param(HttpRpcNames.TIMEOUT, envelope.timeoutMillis).
-                      param(HttpRpcNames.REQUEST_ID, envelope.requestId)
-                ).containing(encoder.getContentType(), encoder.serialize(input)).
+                HttpMethod.POST,
+                Http.uri(fullPath).
+                    param(HttpRpcNames.TIMEOUT, envelope.timeoutMillis).
+                    param(HttpRpcNames.REQUEST_ID, envelope.requestId)
+            ).containing(encoder.getContentType(), encoder.serialize(input)).
                 sendTo(channel);
           } else {
             logger.debug("connection failed", future.getCause());

@@ -1,4 +1,4 @@
-package ru.hh.httprpc.util;
+package ru.hh.httprpc.util.concurrent;
 
 import java.util.concurrent.Executor;
 

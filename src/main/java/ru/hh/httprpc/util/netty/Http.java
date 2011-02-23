@@ -1,4 +1,4 @@
-package ru.hh.httprpc.util;
+package ru.hh.httprpc.util.netty;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;

@@ -1,4 +1,4 @@
-package ru.hh.httprpc.util;
+package ru.hh.httprpc.util.concurrent;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.CancellationException;

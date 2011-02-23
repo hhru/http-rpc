@@ -12,10 +12,10 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
-import ru.hh.httprpc.util.CallingThreadExecutor;
-import ru.hh.httprpc.util.FutureListener;
-import ru.hh.httprpc.util.Nodes;
-import ru.hh.httprpc.util.TimerTasks;
+import ru.hh.httprpc.util.concurrent.AsyncToolbox;
+import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
+import ru.hh.httprpc.util.concurrent.FutureListener;
+import ru.hh.httprpc.util.netty.TimerTasks;
 
 interface SampleAPI {
   RPC<String, Integer> COUNT_MATCHES = RPC.signature("countMatches", String.class, Integer.class);
@@ -48,9 +48,9 @@ public class Example {
     RPCServer metaServer = new RPCServer(TcpOptions.create(), "", 2, new JavaSerializer());
     metaServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(final Envelope envelope, final String argument) {
-        ListenableFuture<Collection<Integer>> future = Nodes.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
+        ListenableFuture<Collection<Integer>> future = AsyncToolbox.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
           public ListenableFuture<Integer> apply(List<InetSocketAddress> targets) {
-            return Nodes.callAny(
+            return AsyncToolbox.callAny(
                 asFunctionOfHost(countMatches, envelope, argument), // optionally - wrapWithTracer(...)
                 targets,
                 Math.max(envelope.timeoutMillis / targets.size(), 20), MILLISECONDS,

@@ -24,8 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
 import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
-import ru.hh.httprpc.util.FutureListener;
-import ru.hh.httprpc.util.Http;
+import ru.hh.httprpc.util.concurrent.FutureListener;
+import ru.hh.httprpc.util.netty.Http;
 
 class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
   public static final Logger logger = LoggerFactory.getLogger(ServerMethodCallHandler.class);

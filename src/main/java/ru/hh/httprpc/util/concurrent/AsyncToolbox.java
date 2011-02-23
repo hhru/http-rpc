@@ -1,4 +1,4 @@
-package ru.hh.httprpc.util;
+package ru.hh.httprpc.util.concurrent;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -16,9 +16,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
-import static ru.hh.httprpc.util.TimerTasks.asTimerTask;
+import static ru.hh.httprpc.util.netty.TimerTasks.asTimerTask;
 
-public class Nodes {
+public class AsyncToolbox {
   public static <T, O> ListenableFuture<O> callAny(Function<T, ListenableFuture<O>> call, Iterable<T> targets, long nextTargetDelay, TimeUnit unit, Timer timer) {
     return new CallAny<T, O>(call, targets, nextTargetDelay, unit, timer);
   }
