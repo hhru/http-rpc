@@ -59,10 +59,13 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     Envelope envelope;
     try {
       Map<String,List<String>> parameters = uriDecoder.getParameters();
+
       List<String> rawTimeout = parameters.get(TIMEOUT);
+      int timeout = rawTimeOut
       Preconditions.checkArgument(rawTimeout.size() == 1, "single " + TIMEOUT + " parameter required");
       List<String> rawRequestId = parameters.get(REQUEST_ID);
       Preconditions.checkArgument(rawRequestId.size() == 1, "single " + REQUEST_ID + " parameter required");
+
       envelope = new Envelope(Integer.parseInt(rawTimeout.get(0)), rawRequestId.get(0));
     } catch (Exception parametersException) {
       Http.response(BAD_REQUEST).

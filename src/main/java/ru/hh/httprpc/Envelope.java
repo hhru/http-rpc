@@ -3,6 +3,9 @@ package ru.hh.httprpc;
 import java.io.Serializable;
 
 public class Envelope implements Serializable {
+  public static final long DEFAULT_TIMEOUT = -1;
+  public static final String DEFAULT_REQUESTID = "-unknown-";
+
   public final long timeoutMillis;
   public final String requestId;
 
