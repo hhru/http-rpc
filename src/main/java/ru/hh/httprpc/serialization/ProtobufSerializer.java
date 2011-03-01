@@ -1,4 +1,4 @@
-package ru.hh.httprpc;
+package ru.hh.httprpc.serialization;
 
 import com.google.common.base.Throwables;
 import com.google.protobuf.Message;

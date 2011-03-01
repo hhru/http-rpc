@@ -5,6 +5,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ExecutionException;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.Test;
+import ru.hh.httprpc.serialization.ProtobufSerializer;
+import ru.hh.httprpc.serialization.Serializer;
 
 public class ProtobufTest extends AbstractClientServerTest {
 

@@ -1,5 +1,7 @@
 package ru.hh.httprpc;
 
+import ru.hh.httprpc.serialization.Serializer;
+
 class ServerMethodDescriptor<I, O> {
   final public ServerMethod<I, O> method;
   final public Serializer.ForClass<O> encoder;

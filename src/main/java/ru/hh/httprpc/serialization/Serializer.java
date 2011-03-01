@@ -1,4 +1,4 @@
-package ru.hh.httprpc;
+package ru.hh.httprpc.serialization;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 

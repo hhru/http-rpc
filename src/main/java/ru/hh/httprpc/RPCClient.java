@@ -30,6 +30,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.netty.Http;
 
 public class RPCClient extends AbstractService {

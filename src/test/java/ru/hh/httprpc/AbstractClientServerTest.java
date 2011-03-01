@@ -7,6 +7,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import ru.hh.httprpc.serialization.JavaSerializer;
+import ru.hh.httprpc.serialization.Serializer;
 
 public abstract class AbstractClientServerTest {
   protected InetSocketAddress address;

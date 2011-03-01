@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
 import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
+import ru.hh.httprpc.serialization.SerializationException;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.Http;
 

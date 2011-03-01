@@ -1,9 +1,10 @@
-package ru.hh.httprpc;
+package ru.hh.httprpc.serialization;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import ru.hh.httprpc.Messages;
 
 public class SerializerTest {
   @DataProvider(name = "serializers")

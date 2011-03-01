@@ -12,6 +12,7 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
+import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.concurrent.AsyncToolbox;
 import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;

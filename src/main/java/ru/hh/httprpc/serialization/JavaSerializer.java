@@ -1,4 +1,4 @@
-package ru.hh.httprpc;
+package ru.hh.httprpc.serialization;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
