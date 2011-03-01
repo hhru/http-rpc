@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
-import static ru.hh.httprpc.util.netty.TimerTasks.asTimerTask;
+import static ru.hh.httprpc.util.netty.Timers.asTimerTask;
 
 public class AsyncToolbox {
   public static <T, O> ListenableFuture<O> callAny(Function<T, ListenableFuture<O>> call, Iterable<T> targets, long nextTargetDelay, TimeUnit unit, Timer timer) {
@@ -68,7 +68,7 @@ public class AsyncToolbox {
   }
 
   private static class CallAny<I, O> extends AbstractListenableFuture<O> {
-    private final List<Invocation> invocations = newArrayList();
+    private final List<Future<?>> futures = newArrayList();
     private final Function<I, ListenableFuture<O>> call;
 
     private final long nextTargetDelay;
@@ -87,9 +87,11 @@ public class AsyncToolbox {
 
     private void callNext(final Iterator<I> targets) {
       // This (and another sync in done()) both protects the list and ensures no new invocations after finishing with Future for whatever reason
-      synchronized(invocations) {
+      synchronized(futures) {
         if (!isDone() && targets.hasNext()) {
           I target = targets.next();
+
+          final ListenableFuture<O> future = call.apply(target);
 
           final Runnable callNextOnce = new RunnableOnce() {
             protected void doRun() {
@@ -97,7 +99,7 @@ public class AsyncToolbox {
             }
           };
 
-          final ListenableFuture<O> future = call.apply(target);
+          final Timeout timeout = timer.newTimeout(asTimerTask(callNextOnce), nextTargetDelay, unit);
 
           new FutureListener<O>(future) {
             protected void success(O result) {
@@ -107,11 +109,13 @@ public class AsyncToolbox {
             protected void exception(Throwable exception) {
               callNextOnce.run();
             }
+
+            protected void done() {
+              timeout.cancel();
+            }
           };
 
-          Timeout timeout = timer.newTimeout(asTimerTask(callNextOnce), nextTargetDelay, unit);
-
-          invocations.add(new Invocation(future, timeout));
+          futures.add(future);
         }
       }
     }
@@ -121,27 +125,12 @@ public class AsyncToolbox {
     }
 
     protected void done() {
-      synchronized (invocations) {
-        for (Invocation invocation : invocations)
-          invocation.cancel();
+      synchronized (futures) {
+        for (Future<?> future : futures)
+          future.cancel(true);
       }
 
       super.done(); // Run listeners
-    }
-
-    private static class Invocation {
-      private final Future<?> future;
-      private final Timeout timeout;
-
-      public Invocation(Future<?> future, Timeout timeout) {
-        this.future = future;
-        this.timeout = timeout;
-      }
-
-      public void cancel() {
-        future.cancel(true);
-        timeout.cancel();
-      }
     }
   }
 }

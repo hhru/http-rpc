@@ -15,7 +15,7 @@ import org.jboss.netty.util.Timer;
 import ru.hh.httprpc.util.concurrent.AsyncToolbox;
 import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;
-import ru.hh.httprpc.util.netty.TimerTasks;
+import ru.hh.httprpc.util.netty.Timers;
 
 interface SampleAPI {
   RPC<String, Integer> COUNT_MATCHES = RPC.signature("countMatches", String.class, Integer.class);
@@ -59,7 +59,7 @@ public class Example {
           }
         }, geometry);
 
-        timer.newTimeout(TimerTasks.cancelFuture(future), envelope.timeoutMillis, MILLISECONDS);
+        Timers.scheduleTimeout(future, timer, envelope.timeoutMillis, MILLISECONDS);
 
         // This should use a normal executor, as merging can be relatively costly(?) and we're better not do it on a network thread
         return Futures.compose(future, sampleFoldFunction(), CallingThreadExecutor.instance());
