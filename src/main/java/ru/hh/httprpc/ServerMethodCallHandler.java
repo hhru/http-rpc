@@ -1,6 +1,7 @@
 package ru.hh.httprpc;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.MapMaker;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.Map;
@@ -9,11 +10,9 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
@@ -25,24 +24,26 @@ import org.slf4j.LoggerFactory;
 import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
 import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
 import ru.hh.httprpc.serialization.SerializationException;
+import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.Http;
 
-class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
+public class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
   public static final Logger logger = LoggerFactory.getLogger(ServerMethodCallHandler.class);
-  
-  private final ChannelGroup allChannels;
+
+  private final Serializer serializer;
   private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods;
 
-  ServerMethodCallHandler(ChannelGroup allChannels, ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods) {
-    this.allChannels = allChannels;
-    this.methods = methods;
+  ServerMethodCallHandler(Serializer serializer) {
+    this.serializer = serializer;
+    this.methods = new MapMaker().makeMap();
   }
 
-  @Override
-  public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    allChannels.add(e.getChannel());
-    ctx.sendUpstream(e);
+  @SuppressWarnings({"unchecked"})
+  public <I, O> void register(RPC<I, O> signature, ServerMethod<I, O> method) {
+    methods.put(signature.path,
+                new ServerMethodDescriptor(method, serializer.forClass(signature.outputClass),
+                                           serializer.forClass(signature.inputClass)));
   }
 
   @Override
@@ -116,6 +117,18 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
       Http.response(INTERNAL_SERVER_ERROR).
           containing(callException).
           sendAndClose(channel);
+    }
+  }
+
+  private static class ServerMethodDescriptor<I, O> {
+    final public ServerMethod<I, O> method;
+    final public Serializer.ForClass<O> encoder;
+    final public Serializer.ForClass<I> decoder;
+
+    ServerMethodDescriptor(ServerMethod<I, O> method, Serializer.ForClass<O> encoder, Serializer.ForClass<I> decoder) {
+      this.method = method;
+      this.encoder = encoder;
+      this.decoder = decoder;
     }
   }
 }

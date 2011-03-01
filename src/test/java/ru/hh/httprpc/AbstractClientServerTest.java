@@ -27,7 +27,7 @@ public abstract class AbstractClientServerTest {
   public void start() throws UnknownHostException {
     TcpOptions serverOptions = TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0));
     serverMethodExecutor = Executors.newFixedThreadPool(serverMethodThreads);
-    server = new RPCServer(serverOptions, basePath, ioThreads, serializerFactory());
+    server = new RPCServer(serverOptions, ioThreads, serializerFactory());
     server.startAndWait();
     address = server.getLocalAddress();
     client = new RPCClient(TcpOptions.create(), basePath, ioThreads, serializerFactory());

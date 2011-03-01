@@ -24,7 +24,7 @@ interface SampleAPI {
 
 public class Example {
   public static void main(String[] args) throws Exception {
-    RPCServer baseServer = new RPCServer(TcpOptions.create(), "", 2, new JavaSerializer());
+    RPCServer baseServer = new RPCServer(TcpOptions.create(), 2, new JavaSerializer());
     baseServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(Envelope envelope, String argument) {
         return Futures.immediateFuture(argument.length());
@@ -46,7 +46,7 @@ public class Example {
 
     final Timer timer = new HashedWheelTimer(5, MILLISECONDS);
 
-    RPCServer metaServer = new RPCServer(TcpOptions.create(), "", 2, new JavaSerializer());
+    RPCServer metaServer = new RPCServer(TcpOptions.create(), 2, new JavaSerializer());
     metaServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(final Envelope envelope, final String argument) {
         ListenableFuture<Collection<Integer>> future = AsyncToolbox.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
