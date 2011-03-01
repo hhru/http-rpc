@@ -13,7 +13,7 @@ import ru.hh.httprpc.serialization.Serializer;
 public abstract class AbstractClientServerTest {
   protected InetSocketAddress address;
   protected String basePath = "/apiBase/";
-  protected RPCServer server;
+  protected HTTPServer server;
   protected RPCClient client;
   protected int ioThreads = 2;
   protected int serverMethodThreads = 8;
@@ -27,7 +27,7 @@ public abstract class AbstractClientServerTest {
   public void start() throws UnknownHostException {
     TcpOptions serverOptions = TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0));
     serverMethodExecutor = Executors.newFixedThreadPool(serverMethodThreads);
-    server = new RPCServer(serverOptions, ioThreads, serializerFactory());
+    server = new HTTPServer(serverOptions, ioThreads, serializerFactory());
     server.startAndWait();
     address = server.getLocalAddress();
     client = new RPCClient(TcpOptions.create(), basePath, ioThreads, serializerFactory());

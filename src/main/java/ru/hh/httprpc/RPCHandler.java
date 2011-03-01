@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -28,13 +29,13 @@ import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.Http;
 
-public class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
-  public static final Logger logger = LoggerFactory.getLogger(ServerMethodCallHandler.class);
+public class RPCHandler extends SimpleChannelUpstreamHandler {
+  public static final Logger logger = LoggerFactory.getLogger(RPCHandler.class);
 
   private final Serializer serializer;
   private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods;
 
-  ServerMethodCallHandler(Serializer serializer) {
+  RPCHandler(Serializer serializer) {
     this.serializer = serializer;
     this.methods = new MapMaker().makeMap();
   }
@@ -80,7 +81,7 @@ public class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
       return;
     }
     try {
-      final ListenableFuture callFuture = descriptor.method.call(envelope, descriptor.decoder.deserialize(request.getContent()));
+      final ListenableFuture callFuture = descriptor.call(envelope, request.getContent());
       new FutureListener<Object>(callFuture) {
         protected void success(Object result) {
           try {
@@ -125,10 +126,14 @@ public class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     final public Serializer.ForClass<O> encoder;
     final public Serializer.ForClass<I> decoder;
 
-    ServerMethodDescriptor(ServerMethod<I, O> method, Serializer.ForClass<O> encoder, Serializer.ForClass<I> decoder) {
+    public ServerMethodDescriptor(ServerMethod<I, O> method, Serializer.ForClass<O> encoder, Serializer.ForClass<I> decoder) {
       this.method = method;
       this.encoder = encoder;
       this.decoder = decoder;
+    }
+
+    public ListenableFuture<O> call(Envelope envelope, ChannelBuffer input) throws SerializationException {
+      return method.call(envelope, decoder.deserialize(input));
     }
   }
 }
