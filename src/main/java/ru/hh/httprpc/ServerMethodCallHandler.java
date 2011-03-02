@@ -80,6 +80,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
       
       envelope = new Envelope(timeout, requestId);
     } catch (Exception parametersException) {
+      logger.debug("bad parameters", parametersException);
       Http.response(BAD_REQUEST).
           containing(parametersException).
           sendAndClose(channel);
@@ -102,6 +103,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
                 containing(descriptor.encoder.getContentType(), descriptor.encoder.serialize(result)).
                 sendAndClose(channel);
           } catch (SerializationException e) {
+            logger.debug("output serialization problem", e);
             Http.response(INTERNAL_SERVER_ERROR).
                 containing(e).
                 sendAndClose(channel);
@@ -124,10 +126,12 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
         }
       });
     } catch (SerializationException decoderException) {
+      logger.debug("deserialization failed", decoderException); 
       Http.response(BAD_REQUEST).
           containing(decoderException).
           sendAndClose(channel);
     } catch (Exception callException) {
+      logger.debug("call failed", callException);
       Http.response(INTERNAL_SERVER_ERROR).
           containing(callException).
           sendAndClose(channel);
