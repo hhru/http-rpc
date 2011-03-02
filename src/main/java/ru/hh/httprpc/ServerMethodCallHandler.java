@@ -61,17 +61,21 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
       Map<String,List<String>> parameters = uriDecoder.getParameters();
 
       List<String> rawTimeout = parameters.get(TIMEOUT);
-      long timeout = Envelope.DEFAULT_TIMEOUT;
-      if (rawTimeout.size() == 1)
+      long timeout;
+      if (rawTimeout == null)
+        timeout = Envelope.DEFAULT_TIMEOUT;
+      else if (rawTimeout.size() == 1)
         timeout = Integer.parseInt(rawTimeout.get(0));
-      else if (rawTimeout.size() > 1)
+      else
         throw new IllegalArgumentException("more than 1 " + TIMEOUT + " parameter");
       
       List<String> rawRequestId = parameters.get(REQUEST_ID);
-      String requestId = Envelope.DEFAULT_REQUESTID;
-      if (rawRequestId.size() == 1) 
+      String requestId;
+      if (rawRequestId == null)
+        requestId = Envelope.DEFAULT_REQUESTID;
+      else if (rawRequestId.size() == 1) 
         requestId = rawRequestId.get(0);
-      else if (rawRequestId.size() > 1)
+      else
         throw new IllegalArgumentException("more than 1 " + REQUEST_ID + " parameter");
       
       envelope = new Envelope(timeout, requestId);
