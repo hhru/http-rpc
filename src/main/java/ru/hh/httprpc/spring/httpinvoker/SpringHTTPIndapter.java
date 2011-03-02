@@ -1,12 +1,11 @@
 package ru.hh.httprpc.spring.httpinvoker;
 
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
+import com.google.common.collect.MapMaker;
 import com.google.common.util.concurrent.Futures;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.io.Serializable;
-import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationResult;
 import ru.hh.httprpc.Envelope;
@@ -19,21 +18,24 @@ public class SpringHTTPIndapter implements ServerMethod<RemoteInvocation, Remote
     return RPC.signature(path, RemoteInvocation.class, RemoteInvocationResult.class);
   }
 
-  Map<String, HttpInvokerMethod> methods;
+  ConcurrentMap<String, HttpInvokerMethod> methods = new MapMaker().makeMap();
 
   private static class HttpInvokerMethod {
     public final ServerMethod implementation;
-    public Class<?> parameterType;
+    public final Class<?> parameterType;
     public final boolean varargs;
 
-    private HttpInvokerMethod(ServerMethod implementation, boolean varargs) {
+    private HttpInvokerMethod(ServerMethod implementation, Class<?> parameterType, boolean varargs) {
       this.implementation = implementation;
+      this.parameterType = parameterType;
       this.varargs = varargs;
     }
   }
 
   public <I, O> void register(RPC<I, O> signature, ServerMethod<I, O> method) {
-    new HttpInvokerMethod(method, signature.inputClass.isArray() && signature.inputClass.getComponentType().equals(Object.class));
+    methods.put(signature.path,
+      new HttpInvokerMethod(method, signature.inputClass, 
+        signature.inputClass.isArray() && signature.inputClass.getComponentType().equals(Object.class)));
   }
 
   public ListenableFuture<RemoteInvocationResult> call(Envelope envelope, RemoteInvocation remoteInvocation) {
