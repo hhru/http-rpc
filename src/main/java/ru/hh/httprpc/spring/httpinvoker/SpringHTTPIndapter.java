@@ -7,6 +7,8 @@ import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.io.Serializable;
 import java.util.Map;
+import org.springframework.remoting.support.RemoteInvocation;
+import org.springframework.remoting.support.RemoteInvocationResult;
 import ru.hh.httprpc.Envelope;
 import ru.hh.httprpc.RPC;
 import ru.hh.httprpc.ServerMethod;
@@ -35,7 +37,7 @@ public class SpringHTTPIndapter implements ServerMethod<RemoteInvocation, Remote
   }
 
   public ListenableFuture<RemoteInvocationResult> call(Envelope envelope, RemoteInvocation remoteInvocation) {
-    String methodName = remoteInvocation.methodName;
+    String methodName = remoteInvocation.getMethodName();
 
     HttpInvokerMethod method = methods.get(methodName);
     if (method == null)
@@ -44,16 +46,16 @@ public class SpringHTTPIndapter implements ServerMethod<RemoteInvocation, Remote
     Object arguments;
 
     if (method.varargs)
-      arguments = remoteInvocation.arguments;
+      arguments = remoteInvocation.getArguments();
     else if (
-        remoteInvocation.parameterTypes.length != 1 ||
-        remoteInvocation.arguments.length != 1 ||
-        !method.parameterType.equals(remoteInvocation.parameterTypes[0]) ||
-        !method.parameterType.isInstance(remoteInvocation.arguments[0])
+        remoteInvocation.getParameterTypes().length != 1 ||
+        remoteInvocation.getArguments().length != 1 ||
+        !method.parameterType.equals(remoteInvocation.getParameterTypes()[0]) ||
+        !method.parameterType.isInstance(remoteInvocation.getArguments()[0])
         )
       return immediateFailedFuture(new NoSuchMethodException(remoteInvocation.toString()));
     else
-      arguments = remoteInvocation.arguments[0];
+      arguments = remoteInvocation.getArguments()[0];
 
     return Futures.compose(
         method.implementation.call(envelope, arguments),
@@ -64,43 +66,5 @@ public class SpringHTTPIndapter implements ServerMethod<RemoteInvocation, Remote
         },
         CallingThreadExecutor.instance()
     );
-  }
-}
-
-/**
- * This class was taken from Spring, package org.springframework.remoting.support and stripped down to absolute minimum
- * still preserving serialized form compatibility
- */
-@SuppressWarnings({"UnusedDeclaration", "FieldCanBeLocal"})
-class RemoteInvocationResult implements Serializable {
-  private static final long serialVersionUID = 2138555143707773549L;
-
-  private Object value;
-  private Throwable exception;
-
-  public RemoteInvocationResult(Object value) {
-    this.value = value;
-  }
-
-  public RemoteInvocationResult(Throwable exception) {
-    this.exception = exception;
-  }
-}
-
-/**
- * This class was taken from Spring, package org.springframework.remoting.support and stripped down to absolute minimum
- * still preserving serialized form compatibility
- */
-@SuppressWarnings("UnusedDeclaration")
-class RemoteInvocation implements Serializable {
-  private static final long serialVersionUID = 6876024250231820554L;
-
-  public String methodName;
-  public Class[] parameterTypes;
-  public Object[] arguments;
-  public Map attributes;
-
-  public String toString() {
-    return methodName + "(" + Joiner.on(", ").join(parameterTypes) + ")";
   }
 }
