@@ -61,7 +61,6 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
       Map<String,List<String>> parameters = uriDecoder.getParameters();
 
       List<String> rawTimeout = parameters.get(TIMEOUT);
-      int timeout = rawTimeOut
       Preconditions.checkArgument(rawTimeout.size() == 1, "single " + TIMEOUT + " parameter required");
       List<String> rawRequestId = parameters.get(REQUEST_ID);
       Preconditions.checkArgument(rawRequestId.size() == 1, "single " + REQUEST_ID + " parameter required");

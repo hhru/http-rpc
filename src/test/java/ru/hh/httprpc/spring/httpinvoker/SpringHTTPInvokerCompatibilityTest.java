@@ -8,11 +8,11 @@ import org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.Test;
 import ru.hh.httprpc.Envelope;
-import ru.hh.httprpc.JavaSerializer;
 import ru.hh.httprpc.RPC;
 import ru.hh.httprpc.RPCServer;
 import ru.hh.httprpc.ServerMethod;
 import ru.hh.httprpc.TcpOptions;
+import ru.hh.httprpc.serialization.JavaSerializer;
 
 public class SpringHTTPInvokerCompatibilityTest {
   private interface TestRPCInterface {
