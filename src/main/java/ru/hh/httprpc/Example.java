@@ -4,14 +4,9 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import static java.lang.String.format;
-import static java.lang.System.out;
 import java.net.InetSocketAddress;
-import static java.util.Arrays.asList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
@@ -21,6 +16,10 @@ import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.RoutingChannelHandler;
 import ru.hh.httprpc.util.netty.Timers;
+import static java.lang.String.format;
+import static java.lang.System.out;
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 interface SampleAPI {
   RPC<String, Integer> COUNT_MATCHES = RPC.signature("countMatches", String.class, Integer.class);
@@ -29,18 +28,15 @@ interface SampleAPI {
 public class Example {
   public static void main(String[] args) throws Exception {
 
-    Map<String, ChannelHandler> routes = ImmutableMap.builder().
-        put("status", new RPCHandler(new JavaSerializer())).
-        build();
-    RoutingChannelHandler router = new RoutingChannelHandler(routes);
-    HTTPServer srv = new HTTPServer(TcpOptions.create(), 2, router);
-
-    HTTPServer baseServer = new HTTPServer(TcpOptions.create(), 2, new JavaSerializer());
-    baseServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
+    RPCHandler baseHandler = new RPCHandler(new JavaSerializer());
+    baseHandler.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(Envelope envelope, String argument) {
         return Futures.immediateFuture(argument.length());
       }
     });
+    RoutingChannelHandler baseRouter = new RoutingChannelHandler(
+      ImmutableMap.<String, ChannelHandler>builder().put("base/", baseHandler).build());
+    HTTPServer baseServer = new HTTPServer(TcpOptions.create(), 2, baseRouter);
 
     RPCClient metaClient = new RPCClient(TcpOptions.create(), "", 2, new JavaSerializer());
     final ClientMethod<String, Integer> countMatches = metaClient.createMethod(SampleAPI.COUNT_MATCHES);
@@ -57,16 +53,16 @@ public class Example {
 
     final Timer timer = new HashedWheelTimer(5, MILLISECONDS);
 
-    HTTPServer metaServer = new HTTPServer(TcpOptions.create(), 2, new JavaSerializer());
-    metaServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
+    RPCHandler metaHandler = new RPCHandler(new JavaSerializer());
+    metaHandler.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(final Envelope envelope, final String argument) {
         ListenableFuture<Collection<Integer>> future = AsyncToolbox.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
           public ListenableFuture<Integer> apply(List<InetSocketAddress> targets) {
             return AsyncToolbox.callAny(
-                asFunctionOfHost(countMatches, envelope, argument), // optionally - wrapWithTracer(...)
-                targets,
-                Math.max(envelope.timeoutMillis / targets.size(), 20), MILLISECONDS,
-                timer
+              asFunctionOfHost(countMatches, envelope, argument), // optionally - wrapWithTracer(...)
+              targets,
+              Math.max(envelope.timeoutMillis / targets.size(), 20), MILLISECONDS,
+              timer
             );
           }
         }, geometry);
@@ -77,6 +73,10 @@ public class Example {
         return Futures.compose(future, sampleFoldFunction(), CallingThreadExecutor.instance());
       }
     });
+    RoutingChannelHandler metaRouter = new RoutingChannelHandler(
+      ImmutableMap.<String, ChannelHandler>builder().put("meta/", metaHandler).build());
+    
+    HTTPServer metaServer = new HTTPServer(TcpOptions.create(), 2, metaHandler);
 
     // ?????
     // PROFIT!!!
