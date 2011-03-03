@@ -11,7 +11,7 @@ import ru.hh.httprpc.serialization.Serializer;
 public class ProtobufTest extends AbstractClientServerTest {
 
   @Override
-  protected Serializer serializerFactory() {
+  protected Serializer serializer() {
     return new ProtobufSerializer();
   }
   
@@ -19,7 +19,7 @@ public class ProtobufTest extends AbstractClientServerTest {
   public void test() throws ExecutionException, InterruptedException {
     RPC<Messages.Request, Messages.Reply> signature = RPC.signature("/helloMethod", Messages.Request.class, Messages.Reply.class);
     ProtobufMethod serverMethod = new ProtobufMethod();
-    server.register(signature, serverMethod);
+    serverHandler.register(signature, serverMethod);
 
     final Messages.Request argument = Messages.Request.newBuilder().setRequest("hello").build();
     

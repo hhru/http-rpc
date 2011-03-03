@@ -17,7 +17,7 @@ public class ShutdownTest extends AbstractClientServerTest {
     RPC<Long, Long> signature = RPC.signature("method", Long.class, Long.class);
     CountDownLatch completed = new CountDownLatch(1);
     CountDownLatch interrupted = new CountDownLatch(1);
-    server.register(signature, new LongJavaMethod(serverMethodExecutor, completed, interrupted));
+    serverHandler.register(signature, new LongJavaMethod(serverMethodExecutor, completed, interrupted));
     ClientMethod<Long, Long> clientMethod = client.createMethod(signature);
     ListenableFuture<Long> future = clientMethod.call(address, new Envelope(10, "qwerty"), 100L);
     server.stopAndWait();

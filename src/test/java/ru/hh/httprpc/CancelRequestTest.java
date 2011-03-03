@@ -24,7 +24,7 @@ public class CancelRequestTest extends AbstractClientServerTest {
     RPC<Long, Long> signature = RPC.signature("method", Long.class, Long.class);
     final CountDownLatch completed = new CountDownLatch(1);
     final CountDownLatch interrupted = new CountDownLatch(1);
-    server.register(signature, new LongJavaMethod(serverMethodExecutor, completed, interrupted));
+    serverHandler.register(signature, new LongJavaMethod(serverMethodExecutor, completed, interrupted));
     ClientMethod<Long, Long> clientMethod = client.createMethod(signature);
 
     ListenableFuture<Long> result = clientMethod.call(address, new Envelope(10, "asdf"), serverTime);
