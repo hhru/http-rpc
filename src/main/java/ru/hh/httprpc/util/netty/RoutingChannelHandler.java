@@ -23,22 +23,21 @@ public class RoutingChannelHandler extends SimpleChannelUpstreamHandler {
 
     for (Map.Entry<String, ChannelHandler> route : routes.entrySet()) {
       String prefix = route.getKey();
-
       if (uri.startsWith(prefix)) {
         request.setUri(uri.substring(prefix.length())); // Substract matched URI prefix
         ctx.getPipeline().addLast(prefix, route.getValue());
         ctx.sendUpstream(e);
         return;
       }
-
-      Http.response(NOT_FOUND).
-          containing(String.format(
-              "Resource %s not found.\n" +
-              "Available resources:\n" +
-              "%s\n",
-              uri,
-              routes.isEmpty() ? "<none>" : Joiner.on("\n").join(routes.keySet())
-          )).sendAndClose(e.getChannel());
     }
+    
+    Http.response(NOT_FOUND).
+      containing(String.format(
+        "Resource %s not found.\n" +
+          "Available resources:\n" +
+          "%s\n",
+        uri,
+        routes.isEmpty() ? "<none>" : Joiner.on("\n").join(routes.keySet())
+      )).sendAndClose(e.getChannel());
   }
 }
