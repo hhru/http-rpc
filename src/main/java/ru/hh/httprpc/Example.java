@@ -1,6 +1,7 @@
 package ru.hh.httprpc;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import static java.lang.String.format;
@@ -9,13 +10,16 @@ import java.net.InetSocketAddress;
 import static java.util.Arrays.asList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.concurrent.AsyncToolbox;
 import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;
+import ru.hh.httprpc.util.netty.RoutingChannelHandler;
 import ru.hh.httprpc.util.netty.Timers;
 
 interface SampleAPI {
@@ -24,6 +28,13 @@ interface SampleAPI {
 
 public class Example {
   public static void main(String[] args) throws Exception {
+
+    Map<String, ChannelHandler> routes = ImmutableMap.builder().
+        put("status", new RPCHandler(new JavaSerializer())).
+        build();
+    RoutingChannelHandler router = new RoutingChannelHandler(routes);
+    HTTPServer srv = new HTTPServer(TcpOptions.create(), 2, router);
+
     HTTPServer baseServer = new HTTPServer(TcpOptions.create(), 2, new JavaSerializer());
     baseServer.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(Envelope envelope, String argument) {

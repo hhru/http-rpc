@@ -1,6 +1,5 @@
 package ru.hh.httprpc;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.util.concurrent.AbstractService;
 import java.net.InetSocketAddress;
@@ -21,7 +20,6 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.netty.GuavyChannelPipelineFactory;
 
 public class HTTPServer extends AbstractService {
@@ -36,7 +34,7 @@ public class HTTPServer extends AbstractService {
    * @param ioThreads the maximum number of I/O worker threads for {@link org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory#NioServerSocketChannelFactory(java.util.concurrent.Executor, java.util.concurrent.Executor, int)}
    * @param serializer
    */
-  public HTTPServer(TcpOptions options, int ioThreads, final Supplier<ChannelHandler> handler) {
+  public HTTPServer(TcpOptions options, int ioThreads, final ChannelHandler handler) {
     ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setOptions(options.toMap());
@@ -48,7 +46,7 @@ public class HTTPServer extends AbstractService {
         return Channels.pipeline(
             childChannelTracker,
             new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
-            handler.get()
+            handler
         );
       }
     });

@@ -35,7 +35,7 @@ public class RPCHandler extends SimpleChannelUpstreamHandler {
   private final Serializer serializer;
   private final ConcurrentMap<String, ServerMethodDescriptor<? super Object, ? super Object>> methods;
 
-  RPCHandler(Serializer serializer) {
+  public RPCHandler(Serializer serializer) {
     this.serializer = serializer;
     this.methods = new MapMaker().makeMap();
   }
