@@ -12,6 +12,8 @@ import org.testng.annotations.Test;
 import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.netty.RoutingChannelHandler;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class RoutingTest {
   @Test
@@ -55,7 +57,14 @@ public class RoutingTest {
       Envelope envelope = new Envelope(1000, "asdfasdfas");
       assertEquals(method1.call(server.getLocalAddress(), envelope, null).get(), "one");
       assertEquals(method2.call(server.getLocalAddress(), envelope, null).get(), "two");
-      //assertEquals(method1.call(server.getLocalAddress(), envelope, null), "wtf?");
+      
+      try {
+        assertEquals(method3.call(server.getLocalAddress(), envelope, null).get(), "wtf?");
+        fail();
+      } catch (ExecutionException e) {
+        assertTrue(e.getCause() instanceof BadResponseException);
+        assertTrue(e.getCause().getMessage().contains("404"));
+      }
 
     } finally {
       client1.stopAndWait();
