@@ -10,7 +10,6 @@ import org.jboss.netty.channel.ChannelHandler;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import ru.hh.httprpc.serialization.JavaSerializer;
-import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.netty.RoutingChannelHandler;
 
 public abstract class AbstractClientServerTest {
@@ -23,21 +22,17 @@ public abstract class AbstractClientServerTest {
   protected int serverMethodThreads = 8;
   protected ExecutorService serverMethodExecutor;
 
-  protected Serializer serializer() {
-    return new JavaSerializer();
-  }
-
   @BeforeMethod
   public void start() throws UnknownHostException {
     TcpOptions serverOptions = TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0));
     serverMethodExecutor = Executors.newFixedThreadPool(serverMethodThreads);
-    serverHandler = new RPCHandler(serializer());
+    serverHandler = new RPCHandler(new JavaSerializer());
     RoutingChannelHandler router = new RoutingChannelHandler(
       ImmutableMap.<String, ChannelHandler>builder().put(basePath, serverHandler).build());
     server = new HTTPServer(serverOptions, ioThreads, router);
     server.startAndWait();
     address = server.getLocalAddress();
-    client = new RPCClient(TcpOptions.create(), basePath, ioThreads, serializer());
+    client = new RPCClient(TcpOptions.create(), basePath, ioThreads, new JavaSerializer());
   }
 
   @AfterMethod
