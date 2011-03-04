@@ -59,12 +59,28 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
     Envelope envelope;
     try {
       Map<String,List<String>> parameters = uriDecoder.getParameters();
+
       List<String> rawTimeout = parameters.get(TIMEOUT);
-      Preconditions.checkArgument(rawTimeout.size() == 1, "single " + TIMEOUT + " parameter required");
+      long timeout;
+      if (rawTimeout == null)
+        timeout = Envelope.DEFAULT_TIMEOUT;
+      else if (rawTimeout.size() == 1)
+        timeout = Integer.parseInt(rawTimeout.get(0));
+      else
+        throw new IllegalArgumentException("more than 1 " + TIMEOUT + " parameter");
+      
       List<String> rawRequestId = parameters.get(REQUEST_ID);
-      Preconditions.checkArgument(rawRequestId.size() == 1, "single " + REQUEST_ID + " parameter required");
-      envelope = new Envelope(Integer.parseInt(rawTimeout.get(0)), rawRequestId.get(0));
+      String requestId;
+      if (rawRequestId == null)
+        requestId = Envelope.DEFAULT_REQUESTID;
+      else if (rawRequestId.size() == 1) 
+        requestId = rawRequestId.get(0);
+      else
+        throw new IllegalArgumentException("more than 1 " + REQUEST_ID + " parameter");
+      
+      envelope = new Envelope(timeout, requestId);
     } catch (Exception parametersException) {
+      logger.debug("bad parameters", parametersException);
       Http.response(BAD_REQUEST).
           containing(parametersException).
           sendAndClose(channel);
@@ -87,6 +103,7 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
                 containing(descriptor.encoder.getContentType(), descriptor.encoder.serialize(result)).
                 sendAndClose(channel);
           } catch (SerializationException e) {
+            logger.debug("output serialization problem", e);
             Http.response(INTERNAL_SERVER_ERROR).
                 containing(e).
                 sendAndClose(channel);
@@ -109,10 +126,12 @@ class ServerMethodCallHandler extends SimpleChannelUpstreamHandler {
         }
       });
     } catch (SerializationException decoderException) {
+      logger.debug("deserialization failed", decoderException); 
       Http.response(BAD_REQUEST).
           containing(decoderException).
           sendAndClose(channel);
     } catch (Exception callException) {
+      logger.debug("call failed", callException);
       Http.response(INTERNAL_SERVER_ERROR).
           containing(callException).
           sendAndClose(channel);
