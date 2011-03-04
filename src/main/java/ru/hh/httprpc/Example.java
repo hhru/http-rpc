@@ -4,25 +4,27 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import static java.lang.String.format;
+import static java.lang.System.out;
 import java.net.InetSocketAddress;
+import static java.util.Arrays.asList;
 import java.util.Collection;
 import java.util.List;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
+import ru.hh.httprpc.balancer.Balancer;
+import ru.hh.httprpc.balancer.RandomRobinBalancer;
 import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.concurrent.AsyncToolbox;
 import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.RoutingChannelHandler;
 import ru.hh.httprpc.util.netty.Timers;
-import static java.lang.String.format;
-import static java.lang.System.out;
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 interface SampleAPI {
-  RPC<String, Integer> COUNT_MATCHES = RPC.signature("countMatches", String.class, Integer.class);
+  RPC<String, Integer> COUNT_MATCHES = RPC.signature("/countMatches", String.class, Integer.class);
 }
 
 public class Example {
@@ -35,7 +37,7 @@ public class Example {
       }
     });
     RoutingChannelHandler baseRouter = new RoutingChannelHandler(
-      ImmutableMap.<String, ChannelHandler>builder().put("base/", baseHandler).build());
+      ImmutableMap.<String, ChannelHandler>builder().put("/base", baseHandler).build());
     HTTPServer baseServer = new HTTPServer(TcpOptions.create(), 2, baseRouter);
 
     RPCClient metaClient = new RPCClient(TcpOptions.create(), "", 2, new JavaSerializer());
@@ -52,17 +54,20 @@ public class Example {
     );
 
     final Timer timer = new HashedWheelTimer(5, MILLISECONDS);
+    final Balancer<InetSocketAddress> balancer = new RandomRobinBalancer<InetSocketAddress>();
 
     RPCHandler metaHandler = new RPCHandler(new JavaSerializer());
     metaHandler.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
       public ListenableFuture<Integer> call(final Envelope envelope, final String argument) {
+        final Function<InetSocketAddress, ListenableFuture<Integer>> callNodeFn = balancer.traceCalls(asFunctionOfHost(countMatches, envelope, argument));
+
         ListenableFuture<Collection<Integer>> future = AsyncToolbox.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
           public ListenableFuture<Integer> apply(List<InetSocketAddress> targets) {
             return AsyncToolbox.callAny(
-              asFunctionOfHost(countMatches, envelope, argument), // optionally - wrapWithTracer(...)
-              targets,
-              Math.max(envelope.timeoutMillis / targets.size(), 20), MILLISECONDS,
-              timer
+                callNodeFn, // optionally - wrapWithTracer(...)
+                balancer.balance(targets),
+                Math.max(envelope.timeoutMillis / targets.size(), 20), MILLISECONDS,
+                timer
             );
           }
         }, geometry);
@@ -74,9 +79,9 @@ public class Example {
       }
     });
     RoutingChannelHandler metaRouter = new RoutingChannelHandler(
-      ImmutableMap.<String, ChannelHandler>builder().put("meta/", metaHandler).build());
+      ImmutableMap.<String, ChannelHandler>builder().put("/meta", metaHandler).build());
     
-    HTTPServer metaServer = new HTTPServer(TcpOptions.create(), 2, metaHandler);
+    HTTPServer metaServer = new HTTPServer(TcpOptions.create(), 2, metaRouter);
 
     // ?????
     // PROFIT!!!
@@ -101,7 +106,7 @@ public class Example {
     };
   }
 
-  private static <O> Function<InetSocketAddress, ListenableFuture<O>> wrapWithTracer(final Function<InetSocketAddress, ListenableFuture<O>> function) {
+  private static <O> Function<InetSocketAddress, ListenableFuture<O>> logCalls(final Function<InetSocketAddress, ListenableFuture<O>> function) {
     return new Function<InetSocketAddress, ListenableFuture<O>>() {
       public ListenableFuture<O> apply(final InetSocketAddress address) {
         ListenableFuture<O> future = function.apply(address);
