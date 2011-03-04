@@ -19,7 +19,7 @@ public class BadResponseTest extends AbstractClientServerTest {
   
   @Test(dataProvider = "methods")
   public void test(ServerMethod<String, Object> method) throws InterruptedException {
-    RPC<String, Object> signature = RPC.signature("throwMethod", String.class, Object.class);
+    RPC<String, Object> signature = RPC.signature("/throwMethod", String.class, Object.class);
     serverHandler.register(signature, method);
     ClientMethod<String, Object> clientMethod = client.createMethod(signature);
 

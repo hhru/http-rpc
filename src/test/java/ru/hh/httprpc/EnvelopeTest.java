@@ -9,7 +9,7 @@ import org.testng.annotations.Test;
 public class EnvelopeTest extends AbstractClientServerTest {
   @Test
   public void test() throws ExecutionException, InterruptedException {
-    RPC<Void, Envelope> signature = RPC.signature("method", Void.class, Envelope.class);
+    RPC<Void, Envelope> signature = RPC.signature("/method", Void.class, Envelope.class);
     
     serverHandler.register(signature, new EchoEnvelopeMethod());
 

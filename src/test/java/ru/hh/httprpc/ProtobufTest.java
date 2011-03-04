@@ -17,7 +17,7 @@ import static org.testng.Assert.assertEquals;
 
 public class ProtobufTest {
 
-  protected String basePath = "/apiBase/";
+  protected String basePath = "/apiBase";
   protected HTTPServer server;
   protected RPCHandler serverHandler;
   protected RPCClient client;

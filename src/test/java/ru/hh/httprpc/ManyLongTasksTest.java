@@ -14,7 +14,7 @@ import org.testng.annotations.Test;
 public class ManyLongTasksTest extends AbstractClientServerTest {
   @Test
   public void test() throws ExecutionException, TimeoutException, InterruptedException {
-    RPC<Long, Long> signature = RPC.signature("method", Long.class, Long.class);
+    RPC<Long, Long> signature = RPC.signature("/method", Long.class, Long.class);
     
     CountDownLatch completed = new CountDownLatch(1);
     serverHandler.register(signature, new LongJavaMethod(serverMethodExecutor, completed, new CountDownLatch(0)));

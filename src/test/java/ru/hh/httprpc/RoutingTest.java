@@ -23,16 +23,16 @@ public class RoutingTest {
     RPCHandler handler2 = new RPCHandler(serializer);
     RoutingChannelHandler router = new RoutingChannelHandler(
       ImmutableMap.<String, ChannelHandler>builder()
-        .put("/one/", handler1)
-        .put("/two/", handler2)
+        .put("/one", handler1)
+        .put("/two", handler2)
         .build());
     HTTPServer server = new HTTPServer(TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0)), 2, router);
 
-    RPCClient client1 = new RPCClient(TcpOptions.create(), "/one/", 2, serializer);
-    RPCClient client2 = new RPCClient(TcpOptions.create(), "/two/", 2, serializer);
-    RPCClient client3 = new RPCClient(TcpOptions.create(), "/noexisting/", 2, serializer);
+    RPCClient client1 = new RPCClient(TcpOptions.create(), "/one", 2, serializer);
+    RPCClient client2 = new RPCClient(TcpOptions.create(), "/two", 2, serializer);
+    RPCClient client3 = new RPCClient(TcpOptions.create(), "/noexisting", 2, serializer);
     
-    RPC<Void, String> signature = RPC.signature("method", Void.class, String.class);
+    RPC<Void, String> signature = RPC.signature("/method", Void.class, String.class);
     server.startAndWait();
     try {
       handler1.register(signature, new ServerMethod<Void, String>() {

@@ -21,7 +21,7 @@ public class CancelRequestTest extends AbstractClientServerTest {
   
   @Test(dataProvider = "times") 
   public void test(long clientTime, long serverTime) throws ExecutionException, InterruptedException {
-    RPC<Long, Long> signature = RPC.signature("method", Long.class, Long.class);
+    RPC<Long, Long> signature = RPC.signature("/method", Long.class, Long.class);
     final CountDownLatch completed = new CountDownLatch(1);
     final CountDownLatch interrupted = new CountDownLatch(1);
     serverHandler.register(signature, new LongJavaMethod(serverMethodExecutor, completed, interrupted));

@@ -14,7 +14,7 @@ import ru.hh.httprpc.util.netty.RoutingChannelHandler;
 
 public abstract class AbstractClientServerTest {
   protected InetSocketAddress address;
-  protected String basePath = "/apiBase/";
+  protected String basePath = "/apiBase";
   protected HTTPServer server;
   protected RPCHandler serverHandler;
   protected RPCClient client;
