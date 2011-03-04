@@ -11,7 +11,7 @@ public class EnvelopeTest extends AbstractClientServerTest {
   public void test() throws ExecutionException, InterruptedException {
     RPC<Void, Envelope> signature = RPC.signature("method", Void.class, Envelope.class);
     
-    server.register(signature, new EchoEnvelopeMethod());
+    serverHandler.register(signature, new EchoEnvelopeMethod());
 
     ClientMethod<Void, Envelope> clientMethod = client.createMethod(signature);
     

@@ -17,7 +17,7 @@ public class ManyLongTasksTest extends AbstractClientServerTest {
     RPC<Long, Long> signature = RPC.signature("method", Long.class, Long.class);
     
     CountDownLatch completed = new CountDownLatch(1);
-    server.register(signature, new LongJavaMethod(serverMethodExecutor, completed, new CountDownLatch(0)));
+    serverHandler.register(signature, new LongJavaMethod(serverMethodExecutor, completed, new CountDownLatch(0)));
 
     ClientMethod<Long, Long> clientMethod = client.createMethod(signature);
     
