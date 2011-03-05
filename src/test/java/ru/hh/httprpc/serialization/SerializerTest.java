@@ -1,6 +1,5 @@
 package ru.hh.httprpc.serialization;
 
-import org.jboss.netty.buffer.ChannelBuffer;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -16,12 +15,11 @@ public class SerializerTest {
   }
   
   @Test(dataProvider = "serializers")
-  public void fromTo(Serializer factory, Object[] objects) throws SerializationException {
+  public void fromTo(Serializer serializer, Object[] objects) throws SerializationException {
     for (Object object : objects) {
-      Serializer.ForClass serializer = factory.forClass(object.getClass());
       @SuppressWarnings("unchecked")
-      ChannelBuffer serialForm = serializer.serialize(object);
-      assertEquals(serializer.deserialize(serialForm), object);
+      Class<Object> clazz = (Class<Object>) object.getClass();
+      assertEquals(serializer.decoder(clazz).apply(serializer.encoder(clazz).apply(object)), object);
     }
   }
 }

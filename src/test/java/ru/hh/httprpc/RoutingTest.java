@@ -8,12 +8,12 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 import org.jboss.netty.channel.ChannelHandler;
-import org.testng.annotations.Test;
-import ru.hh.httprpc.serialization.JavaSerializer;
-import ru.hh.httprpc.util.netty.RoutingChannelHandler;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+import org.testng.annotations.Test;
+import ru.hh.httprpc.serialization.JavaSerializer;
+import ru.hh.httprpc.util.netty.RoutingHandler;
 
 public class RoutingTest {
   @Test
@@ -21,7 +21,7 @@ public class RoutingTest {
     final JavaSerializer serializer = new JavaSerializer();
     RPCHandler handler1 = new RPCHandler(serializer);
     RPCHandler handler2 = new RPCHandler(serializer);
-    RoutingChannelHandler router = new RoutingChannelHandler(
+    RoutingHandler router = new RoutingHandler(
       ImmutableMap.<String, ChannelHandler>builder()
         .put("/one", handler1)
         .put("/two", handler2)

@@ -1,5 +1,6 @@
 package ru.hh.httprpc.serialization;
 
+import com.google.common.base.Function;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -9,19 +10,22 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import ru.hh.httprpc.util.FastObjectInputStream;
 
 public class JavaSerializer implements Serializer {
-  @SuppressWarnings("unchecked")
-  public <T> ForClass<T> forClass(Class<T> clazz) {
-    return (ForClass<T>) INSTANCE;
+  public String getContentType() {
+    return "application/x-java-serialized-object";
   }
 
-  private static final ForClass INSTANCE = new ForClass();
+  @SuppressWarnings("unchecked")
+  public <T> Function<T, ChannelBuffer> encoder(Class<T> clazz) {
+    return (Function<T, ChannelBuffer>) ENCODER;
+  }
 
-  private static class ForClass<T> implements Serializer.ForClass<T> {
-    public String getContentType() {
-      return "application/x-java-serialized-object";
-    }
+  @SuppressWarnings("unchecked")
+  public <T> Function<ChannelBuffer, T> decoder(Class<T> clazz) {
+    return (Function<ChannelBuffer, T>) DECODER;
+  }
 
-    public ChannelBuffer serialize(T object) throws SerializationException {
+  private static Function<Object, ChannelBuffer> ENCODER = new Function<Object, ChannelBuffer>() {
+    public ChannelBuffer apply(Object object) {
       try {
         ChannelBuffer serialForm = ChannelBuffers.dynamicBuffer();
         ObjectOutputStream oos = new ObjectOutputStream(new ChannelBufferOutputStream(serialForm));
@@ -31,16 +35,17 @@ public class JavaSerializer implements Serializer {
         throw new SerializationException(e);
       }
     }
+  };
 
-    @SuppressWarnings("unchecked")
-    public T deserialize(ChannelBuffer serialForm) throws SerializationException {
+  private static Function<ChannelBuffer, Object> DECODER = new Function<ChannelBuffer, Object>() {
+    public Object apply(ChannelBuffer serialForm) {
       try {
         // Todo: Use JBoss Marshalling/Serialization?
         ObjectInputStream ois = new FastObjectInputStream(new ChannelBufferInputStream(serialForm));
-        return (T) ois.readObject();
+        return ois.readObject();
       } catch (Exception e) {
         throw new SerializationException(e);
       }
     }
-  }
+  };
 }

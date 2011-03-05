@@ -8,15 +8,14 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 import org.jboss.netty.channel.ChannelHandler;
+import static org.testng.Assert.assertEquals;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import ru.hh.httprpc.serialization.ProtobufSerializer;
-import ru.hh.httprpc.util.netty.RoutingChannelHandler;
-import static org.testng.Assert.assertEquals;
+import ru.hh.httprpc.util.netty.RoutingHandler;
 
 public class ProtobufTest {
-
   protected String basePath = "/apiBase";
   protected HTTPServer server;
   protected RPCHandler serverHandler;
@@ -26,7 +25,7 @@ public class ProtobufTest {
   public void start() throws UnknownHostException {
     TcpOptions serverOptions = TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0));
     serverHandler = new RPCHandler(new ProtobufSerializer());
-    RoutingChannelHandler router = new RoutingChannelHandler(
+    RoutingHandler router = new RoutingHandler(
       ImmutableMap.<String, ChannelHandler>builder().put(basePath, serverHandler).build());
     server = new HTTPServer(serverOptions, 2, router);
     server.startAndWait();

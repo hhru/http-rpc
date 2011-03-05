@@ -1,11 +1,12 @@
 <configuration>
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>[%d{HH:mm:ss.SSS}] [%thread] %-5level %logger{60} - %msg%n</pattern>
+      <pattern>[%d{HH:mm:ss.SSS}] [%thread] %-5level %logger{60} - %msg%n%xEx{3}</pattern>
     </encoder>
+    <target>System.err</target>
   </appender>
   
-  <logger name="ru.hh.httprpc" level="DEBUG"/>
+  <logger name="ru.hh.httprpc" level="INFO"/>
   
   <root level="INFO">
     <appender-ref ref="STDOUT"/>

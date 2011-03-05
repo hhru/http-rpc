@@ -25,7 +25,7 @@ public class BadResponseTest extends AbstractClientServerTest {
 
     String message = "message to be returned as exception";
     try {
-      clientMethod.call(address, new Envelope(123, "123"), message).get();
+      clientMethod.call(address, new Envelope(), message).get();
       fail();
     } catch (ExecutionException e) {
       if (e.getCause() instanceof BadResponseException) {

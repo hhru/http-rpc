@@ -1,9 +1,12 @@
 package ru.hh.httprpc.util.netty;
 
 import com.google.common.base.Charsets;
+import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Throwables;
+import static java.lang.String.format;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
@@ -21,6 +24,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 
 public class Http {
@@ -28,8 +32,8 @@ public class Http {
     return new HttpRequestBuilder(method, uri);
   }
 
-  public static HttpRequestBuilder request(HttpMethod method, UriBuilder uri) {
-    return new HttpRequestBuilder(method, uri.toString());
+  public static HttpRequestBuilder request(HttpMethod method, UrlBuilder url) {
+    return new HttpRequestBuilder(method, url.toString());
   }
 
   public static HttpResponseBuilder response(HttpResponseStatus status) {
@@ -86,29 +90,29 @@ public class Http {
   }
 
   public static final class HttpRequestBuilder extends HttpMessageBuilder<HttpRequest, HttpRequestBuilder> {
-    protected HttpRequestBuilder(HttpMethod method, String uri) {
+    HttpRequestBuilder(HttpMethod method, String uri) {
       super(new DefaultHttpRequest(HTTP_1_1, method, uri));
     }
   }
 
   public static final class HttpResponseBuilder extends HttpMessageBuilder<HttpResponse, HttpResponseBuilder> {
-    private HttpResponseBuilder(HttpResponseStatus status) {
+    HttpResponseBuilder(HttpResponseStatus status) {
       super(new DefaultHttpResponse(HTTP_1_1, status));
     }
   }
 
-  public static UriBuilder uri(String path) {
-    return new UriBuilder(path);
+  public static UrlBuilder url(String path) {
+    return new UrlBuilder(path);
   }
 
-  public static final class UriBuilder {
+  public static final class UrlBuilder {
     private final QueryStringEncoder encoder;
 
-    public UriBuilder(String path) {
-      encoder = new QueryStringEncoder(path);
+    UrlBuilder(String path) {
+      encoder = new QueryStringEncoder(path, Charsets.UTF_8);
     }
 
-    public UriBuilder param(String name, Object value) {
+    public UrlBuilder param(String name, Object value) {
       encoder.addParam(name, value.toString());
       return this;
     }
@@ -119,6 +123,90 @@ public class Http {
 
     public URI toUri() throws URISyntaxException {
       return encoder.toUri();
+    }
+  }
+
+  public static class UrlDecoder {
+    private final QueryStringDecoder decoder;
+
+    public UrlDecoder(String url) {
+      decoder = new QueryStringDecoder(url, Charsets.UTF_8);
+    }
+
+    public String path() {
+      return decoder.getPath();
+    }
+
+    public String singleString(String name) {
+      String value = optionalSingleString(name);
+      checkArgument(value != null, "'%s' is expected to be a single-valued string, actual: <null>", name);
+      return value;
+    }
+
+    public String optionalSingleString(String name) {
+      List<String> values = decoder.getParameters().get(name);
+
+      if (values == null || values.size() == 0)
+        return null;
+
+      checkArgument(values.size() == 1, "'%s' is expected to be a single-valued string, actual: %s", name, values);
+
+      return values.get(0);
+    }
+
+    public String optionalSingleString(String name, String def) {
+      String value = optionalSingleString(name);
+      return value != null ? value : def;
+    }
+
+    public int singleInt(String name) {
+      Integer value = optionalSingleInt(name);
+      checkArgument(value != null, "'%s' is expected to be a single-valued int, actual: <null>", name);
+      return value;
+    }
+
+    public Integer optionalSingleInt(String name) {
+      List<String> values = decoder.getParameters().get(name);
+
+      if (values == null || values.size() == 0)
+        return null;
+
+      checkArgument(values.size() == 1, "'%s' is expected to be a single-valued int, actual: %s", name, values);
+      try {
+        return Integer.valueOf(values.get(0));
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException(format("'%s' is expected to be a single-valued int, actual: %s", name, values.get(0)));
+      }
+    }
+
+    public Integer optionalSingleInt(String name, Integer def) {
+      Integer value = optionalSingleInt(name);
+      return value != null ? value : def;
+    }
+
+    public long singleLong(String name) {
+      Long value = optionalSingleLong(name);
+      checkArgument(value != null, "'%s' is expected to be a single-valued long, actual: <null>", name);
+      return value;
+    }
+
+    public Long optionalSingleLong(String name) {
+      List<String> values = decoder.getParameters().get(name);
+
+      if (values == null || values.size() == 0)
+        return null;
+
+      checkArgument(values.size() == 1, "'%s' is expected to be a single-valued long, actual: %s", name, values);
+      try {
+        return Long.valueOf(values.get(0));
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException(format("'%s' is expected to be a single-valued long, actual: %s", name, values.get(0)));
+      }
+    }
+
+    public Long optionalSingleLong(String name, Long def) {
+      Long value = optionalSingleLong(name);
+      return value != null ? value : def;
     }
   }
 }

@@ -9,6 +9,10 @@ public class Envelope implements Serializable {
   public final long timeoutMillis;
   public final String requestId;
 
+  public Envelope() {
+    this(DEFAULT_TIMEOUT, DEFAULT_REQUESTID);
+  }
+
   public Envelope(long timeoutMillis, String requestId) {
     this.timeoutMillis = timeoutMillis;
     this.requestId = requestId;

@@ -1,9 +1,8 @@
 package ru.hh.httprpc;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -15,26 +14,34 @@ public class CancelRequestTest extends AbstractClientServerTest {
       {0, 1000},
       {1, 1000},
       {10, 1000},
-      {100, 1000}
+      {100, 1000},
+      {300, 1000},
+      {300, 10},
+      {300, 100}
     };
   }
   
   @Test(dataProvider = "times") 
-  public void test(long clientTime, long serverTime) throws ExecutionException, InterruptedException {
-    RPC<Long, Long> signature = RPC.signature("/method", Long.class, Long.class);
-    final CountDownLatch completed = new CountDownLatch(1);
-    final CountDownLatch interrupted = new CountDownLatch(1);
-    serverHandler.register(signature, new LongJavaMethod(serverMethodExecutor, completed, interrupted));
-    ClientMethod<Long, Long> clientMethod = client.createMethod(signature);
+  public void test(long clientTimeout, long serverSleep) throws Exception {
+    SleeperServerMethod serverMethod = new SleeperServerMethod();
 
-    ListenableFuture<Long> result = clientMethod.call(address, new Envelope(10, "asdf"), serverTime);
-    if (clientTime > 0) {
-      Thread.sleep(clientTime);
-    }
+    serverHandler.register(LONG2LONG_METHOD, serverMethod);
+    ClientMethod<Long, Long> clientMethod = client.createMethod(LONG2LONG_METHOD);
+
+    ListenableFuture<Long> result = clientMethod.call(address, new Envelope(), serverSleep);
+    Thread.sleep(clientTimeout);
     result.cancel(true);
-    if (clientTime >= 100) {
-      assertTrue(interrupted.await(10, TimeUnit.MILLISECONDS));
+
+    if (clientTimeout < serverSleep) { // if client sleeps less than server,
+      assertFalse(serverMethod.completed()); // the method should never complete
+
+      if (serverMethod.started()) // if the call actually went through to server,
+        assertTrue(serverMethod.interruptedWithin(10, MILLISECONDS)); // ensure it was interrupted
+
+    } else {
+      // Though, it's totally other case if the server had enough time!
+      assertTrue(serverMethod.completed());
+      assertFalse(serverMethod.interrupted());
     }
-    assertTrue(completed.getCount() == 1);
   }
 }

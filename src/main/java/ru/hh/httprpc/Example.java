@@ -20,7 +20,7 @@ import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.concurrent.AsyncToolbox;
 import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;
-import ru.hh.httprpc.util.netty.RoutingChannelHandler;
+import ru.hh.httprpc.util.netty.RoutingHandler;
 import ru.hh.httprpc.util.netty.Timers;
 
 interface SampleAPI {
@@ -36,7 +36,7 @@ public class Example {
         return Futures.immediateFuture(argument.length());
       }
     });
-    RoutingChannelHandler baseRouter = new RoutingChannelHandler(
+    RoutingHandler baseRouter = new RoutingHandler(
       ImmutableMap.<String, ChannelHandler>builder().put("/base", baseHandler).build());
     HTTPServer baseServer = new HTTPServer(TcpOptions.create(), 2, baseRouter);
 
@@ -78,7 +78,7 @@ public class Example {
         return Futures.compose(future, sampleFoldFunction(), CallingThreadExecutor.instance());
       }
     });
-    RoutingChannelHandler metaRouter = new RoutingChannelHandler(
+    RoutingHandler metaRouter = new RoutingHandler(
       ImmutableMap.<String, ChannelHandler>builder().put("/meta", metaHandler).build());
     
     HTTPServer metaServer = new HTTPServer(TcpOptions.create(), 2, metaRouter);

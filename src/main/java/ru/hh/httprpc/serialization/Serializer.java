@@ -1,15 +1,11 @@
 package ru.hh.httprpc.serialization;
 
+import com.google.common.base.Function;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 public interface Serializer {
-  interface ForClass<T> {
-    String getContentType();
+  String getContentType();
 
-    ChannelBuffer serialize(T object) throws SerializationException;
-
-    T deserialize(ChannelBuffer serialForm) throws SerializationException;
-  }
-
-  <T> ForClass<T> forClass(Class<T> clazz);
+  <T> Function<T, ChannelBuffer> encoder(Class<T> clazz);
+  <T> Function<ChannelBuffer, T> decoder(Class<T> clazz);
 }

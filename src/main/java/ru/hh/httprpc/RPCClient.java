@@ -1,5 +1,6 @@
 package ru.hh.httprpc;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -60,12 +61,13 @@ public class RPCClient extends AbstractService {
 
   @Override
   protected void doStart() {
+    logger.debug("started");
     notifyStarted();
   }
 
   @Override
   protected void doStop() {
-    logger.trace("stopping");
+    logger.debug("stopping");
     try {
       allChannels.close().awaitUninterruptibly();
       bootstrap.releaseExternalResources();
@@ -80,17 +82,17 @@ public class RPCClient extends AbstractService {
   public <I, O> ClientMethod<I, O> createMethod(RPC<I, O> signature) {
     return new NettyClientMethod<I, O>(
         basePath + signature.path,
-        serializer.forClass(signature.inputClass),
-        serializer.forClass(signature.outputClass)
+        serializer.encoder(signature.inputClass),
+        serializer.decoder(signature.outputClass)
     );
   }
 
   private class NettyClientMethod<I, O> implements ClientMethod<I, O> {
     private final String fullPath;
-    private final Serializer.ForClass<I> encoder;
-    private final Serializer.ForClass<O> decoder;
+    Function<I, ChannelBuffer> encoder;
+    Function<ChannelBuffer, O> decoder;
 
-    private NettyClientMethod(String fullPath, Serializer.ForClass<I> encoder, Serializer.ForClass<O> decoder) {
+    private NettyClientMethod(String fullPath, Function<I, ChannelBuffer> encoder, Function<ChannelBuffer, O> decoder) {
       this.fullPath = fullPath;
       this.encoder = encoder;
       this.decoder = decoder;
@@ -112,10 +114,11 @@ public class RPCClient extends AbstractService {
             channel.getPipeline().addLast("handler", new ClientHandler(clientFuture));
             Http.request(
                 HttpMethod.POST,
-                Http.uri(fullPath).
+                Http.url(fullPath).
                     param(HttpRpcNames.TIMEOUT, envelope.timeoutMillis).
                     param(HttpRpcNames.REQUEST_ID, envelope.requestId)
-            ).containing(encoder.getContentType(), encoder.serialize(input)).
+            ).
+                containing(serializer.getContentType(), encoder.apply(input)).
                 sendTo(channel);
           } else {
             logger.debug("connection failed", future.getCause());
@@ -139,7 +142,7 @@ public class RPCClient extends AbstractService {
         ChannelBuffer content = response.getContent();
         if (response.getStatus().equals(HttpResponseStatus.OK)) {
           try {
-            O result = decoder.deserialize(content);
+            O result = decoder.apply(content);
             future.set(result);
           } catch (RuntimeException e) {
             logger.debug("failed to decode response", e);

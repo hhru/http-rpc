@@ -1,20 +1,23 @@
 package ru.hh.httprpc.util.netty;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+import static java.lang.String.format;
 import java.util.Map;
 import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 
-@ChannelHandler.Sharable
-public class RoutingChannelHandler extends SimpleChannelUpstreamHandler {
+@Sharable
+public class RoutingHandler extends SimpleChannelUpstreamHandler {
   private final Map<String, ChannelHandler> routes;
 
-  public RoutingChannelHandler(Map<String, ChannelHandler> routes) {
-    this.routes = routes;
+  public RoutingHandler(Map<String, ChannelHandler> routes) {
+    this.routes = ImmutableMap.copyOf(routes);
   }
 
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
@@ -32,12 +35,12 @@ public class RoutingChannelHandler extends SimpleChannelUpstreamHandler {
     }
     
     Http.response(NOT_FOUND).
-      containing(String.format(
-        "Resource %s not found.\n" +
-          "Available resources:\n" +
+      containing(format(
+          "resource '%s' not found.\n" +
+          "available resources:\n" +
           "%s\n",
-        uri,
-        routes.isEmpty() ? "<none>" : Joiner.on("\n").join(routes.keySet())
+          uri,
+          routes.isEmpty() ? "<none>" : Joiner.on("\n").join(routes.keySet())
       )).sendAndClose(e.getChannel());
   }
 }

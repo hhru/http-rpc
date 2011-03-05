@@ -1,6 +1,5 @@
 package ru.hh.httprpc;
 
-import com.google.common.base.Suppliers;
 import com.google.common.util.concurrent.AbstractService;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
@@ -13,19 +12,22 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.httprpc.util.netty.Http;
 
 public class HTTPServer extends AbstractService {
   public static final Logger logger = LoggerFactory.getLogger(HTTPServer.class);
   
   private final ServerBootstrap bootstrap;
-  private final ChildChannelTracker childChannelTracker = new ChildChannelTracker();
+  private final ChannelTracker channelTracker = new ChannelTracker();
   volatile private Channel serverChannel;
   
   /**
@@ -39,8 +41,9 @@ public class HTTPServer extends AbstractService {
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
         return Channels.pipeline(
-            childChannelTracker,
+            channelTracker,
             new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
+            // todo: exception handler
             handler
         );
       }
@@ -52,10 +55,10 @@ public class HTTPServer extends AbstractService {
   }
 
   protected void doStart() {
-    logger.trace("starting");
+    logger.debug("starting");
     try {
       serverChannel = bootstrap.bind();
-      logger.trace("started");
+      logger.debug("started");
       notifyStarted();
     } catch (RuntimeException e){
       logger.error("can't start", e);
@@ -65,12 +68,12 @@ public class HTTPServer extends AbstractService {
   }
 
   protected void doStop() {
-    logger.trace("stopping");
+    logger.debug("stopping");
     try {
       serverChannel.close().awaitUninterruptibly();
-      childChannelTracker.waitUntilClosed();
+      channelTracker.waitForChildren();
       bootstrap.releaseExternalResources();
-      logger.trace("stopped");
+      logger.debug("stopped");
       notifyStopped();
     } catch (RuntimeException e) {
       logger.error("can't stop", e);
@@ -80,15 +83,22 @@ public class HTTPServer extends AbstractService {
   }
   
   @ChannelHandler.Sharable
-  private static class ChildChannelTracker extends SimpleChannelUpstreamHandler {
+  private static class ChannelTracker extends SimpleChannelUpstreamHandler {
     private final ChannelGroup group = new DefaultChannelGroup();
+
+    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+      logger.error("Unexpected exception ", e.getCause());
+      Http.response(INTERNAL_SERVER_ERROR).
+          containing(e.getCause()).
+          sendAndClose(e.getChannel());
+    }
 
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
       group.add(e.getChannel());
       ctx.sendUpstream(e);
     } // Todo: better handling for channels opened after calling waitUntilClosed()
 
-    public void waitUntilClosed() {
+    public void waitForChildren() {
       for (Channel channel : group)
         channel.getCloseFuture().awaitUninterruptibly();
     }

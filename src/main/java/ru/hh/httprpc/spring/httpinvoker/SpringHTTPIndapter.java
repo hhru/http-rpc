@@ -18,24 +18,22 @@ public class SpringHTTPIndapter implements ServerMethod<RemoteInvocation, Remote
     return RPC.signature(path, RemoteInvocation.class, RemoteInvocationResult.class);
   }
 
-  ConcurrentMap<String, HttpInvokerMethod> methods = new MapMaker().makeMap();
+  private final ConcurrentMap<String, HttpInvokerMethod> methods = new MapMaker().makeMap();
 
   private static class HttpInvokerMethod {
     public final ServerMethod implementation;
     public final Class<?> parameterType;
     public final boolean varargs;
 
-    private HttpInvokerMethod(ServerMethod implementation, Class<?> parameterType, boolean varargs) {
+    private <T> HttpInvokerMethod(ServerMethod<T, ?> implementation, Class<T> parameterType) {
       this.implementation = implementation;
       this.parameterType = parameterType;
-      this.varargs = varargs;
+      this.varargs = parameterType.isArray() && parameterType.getComponentType().equals(Object.class);
     }
   }
 
   public <I, O> void register(RPC<I, O> signature, ServerMethod<I, O> method) {
-    methods.put(signature.path,
-      new HttpInvokerMethod(method, signature.inputClass, 
-        signature.inputClass.isArray() && signature.inputClass.getComponentType().equals(Object.class)));
+    methods.put(signature.path, new HttpInvokerMethod(method, signature.inputClass));
   }
 
   public ListenableFuture<RemoteInvocationResult> call(Envelope envelope, RemoteInvocation remoteInvocation) {
