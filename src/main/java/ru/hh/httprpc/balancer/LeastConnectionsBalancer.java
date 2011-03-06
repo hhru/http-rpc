@@ -5,11 +5,11 @@ import com.google.common.base.Functions;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Lists.newArrayList;
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.ListenableFuture;
 import static java.lang.Runtime.getRuntime;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -25,28 +25,12 @@ public class LeastConnectionsBalancer<N> implements Balancer<N> {
         }
       });
 
-  private static class NodeStat<N> implements Comparable<NodeStat<N>> {
-    private final N node;
-    private final AtomicInteger connections = new AtomicInteger(0);
+  private static class NodeStat<N> {
+    public final N node;
+    public final AtomicInteger connections = new AtomicInteger(0);
 
     private NodeStat(N node) {
       this.node = node;
-    }
-
-    public void connected() {
-      connections.incrementAndGet();
-    }
-
-    public void disconnected() {
-      connections.decrementAndGet();
-    }
-
-    public N getNode() {
-      return node;
-    }
-
-    public int compareTo(NodeStat<N> stat) {
-      return Ints.compare(stat.connections.get(), connections.get());
     }
 
     public boolean equals(Object o) {
@@ -65,6 +49,12 @@ public class LeastConnectionsBalancer<N> implements Balancer<N> {
     }
   }
 
+  private Ordering<NodeStat> NODE_ORDER = new Ordering<NodeStat>() {
+    public int compare(NodeStat left, NodeStat right) {
+      return Ints.compare(right.connections.get(), left.connections.get());
+    }
+  };
+
   public Iterable<N> balance(final Collection<N> nodes) {
     return new Iterable<N>() {
       public Iterator<N> iterator() {
@@ -76,9 +66,9 @@ public class LeastConnectionsBalancer<N> implements Balancer<N> {
           }
 
           public synchronized N next() {
-            NodeStat<N> bestNode = Collections.max(remainingNodes);
+            NodeStat<N> bestNode = NODE_ORDER.max(remainingNodes);
             remainingNodes.remove(bestNode);
-            return bestNode.getNode();
+            return bestNode.node;
           }
 
           public void remove() {
@@ -96,10 +86,10 @@ public class LeastConnectionsBalancer<N> implements Balancer<N> {
 
         ListenableFuture<O> future = nodeCallFunction.apply(node);
 
-        nodeStat.connected();
+        nodeStat.connections.incrementAndGet();
         new FutureListener<O>(future) {
           protected void done() {
-            nodeStat.disconnected();
+            nodeStat.connections.decrementAndGet();
           }
         };
 
