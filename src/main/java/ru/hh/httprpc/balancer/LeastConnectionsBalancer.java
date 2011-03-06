@@ -6,17 +6,31 @@ import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Lists.newArrayList;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Ordering;
+import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.ListenableFuture;
 import static java.lang.Runtime.getRuntime;
+import static java.lang.System.nanoTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 
 public class LeastConnectionsBalancer<N> implements Balancer<N> {
+  private static class NodeStat<N> {
+    public final N node;
+    public final AtomicInteger connections = new AtomicInteger(0);
+    public volatile long lastFault = nanoTime();
+
+    private NodeStat(N node) {
+      this.node = node;
+    }
+  }
+
+  private final long faultTimerNs;
   private final ConcurrentMap<N, NodeStat<N>> stats = new MapMaker().
       concurrencyLevel(getRuntime().availableProcessors()).
       makeComputingMap(new Function<N, NodeStat<N>>() {
@@ -25,33 +39,20 @@ public class LeastConnectionsBalancer<N> implements Balancer<N> {
         }
       });
 
-  private static class NodeStat<N> {
-    public final N node;
-    public final AtomicInteger connections = new AtomicInteger(0);
-
-    private NodeStat(N node) {
-      this.node = node;
-    }
-
-    public boolean equals(Object o) {
-      if (this == o)
-        return true;
-      if (o == null || getClass() != o.getClass())
-        return false;
-
-      NodeStat stat = (NodeStat) o;
-
-      return node.equals(stat.node);
-    }
-
-    public int hashCode() {
-      return node.hashCode();
-    }
+  public LeastConnectionsBalancer(long faultTimer, TimeUnit unit) {
+    faultTimerNs = unit.toNanos(faultTimer);
   }
 
   private Ordering<NodeStat> NODE_ORDER = new Ordering<NodeStat>() {
     public int compare(NodeStat left, NodeStat right) {
-      return Ints.compare(right.connections.get(), left.connections.get());
+      boolean leftAlive = (nanoTime() - left.lastFault) > faultTimerNs;
+      boolean rightAlive = (nanoTime() - right.lastFault) > faultTimerNs;
+
+      int comparison = Booleans.compare(leftAlive, rightAlive);
+      if (comparison != 0)
+        return comparison;
+
+      return -Ints.compare(left.connections.get(), right.connections.get());
     }
   };
 
@@ -88,6 +89,10 @@ public class LeastConnectionsBalancer<N> implements Balancer<N> {
 
         nodeStat.connections.incrementAndGet();
         new FutureListener<O>(future) {
+          protected void exception(Throwable exception) {
+            nodeStat.lastFault = nanoTime();
+          }
+
           protected void done() {
             nodeStat.connections.decrementAndGet();
           }

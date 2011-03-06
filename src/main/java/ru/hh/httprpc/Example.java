@@ -55,6 +55,7 @@ public class Example {
 
     final Timer timer = new HashedWheelTimer(5, MILLISECONDS);
     final Balancer<InetSocketAddress> balancer = new RandomRobinBalancer<InetSocketAddress>();
+//    final Balancer<InetSocketAddress> balancer = new LeastConnectionsBalancer<InetSocketAddress>(1, SECONDS);
 
     RPCHandler metaHandler = new RPCHandler(new JavaSerializer());
     metaHandler.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
@@ -64,7 +65,7 @@ public class Example {
         ListenableFuture<Collection<Integer>> future = AsyncToolbox.callEvery(new Function<List<InetSocketAddress>, ListenableFuture<Integer>>() {
           public ListenableFuture<Integer> apply(List<InetSocketAddress> targets) {
             return AsyncToolbox.callAny(
-                callNodeFn, // optionally - wrapWithTracer(...)
+                callNodeFn, // optionally - logCalls(...)
                 balancer.balance(targets),
                 Math.max(envelope.timeoutMillis / targets.size(), 20), MILLISECONDS,
                 timer
