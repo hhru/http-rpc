@@ -2,19 +2,17 @@ package ru.hh.httprpc.balancer;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.collect.ImmutableMap;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Lists.newArrayList;
-import com.google.common.collect.MapMaker;
 import com.google.common.collect.Ordering;
-import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.ListenableFuture;
-import static java.lang.Runtime.getRuntime;
 import static java.lang.System.nanoTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import ru.hh.httprpc.util.concurrent.FutureListener;
@@ -30,16 +28,15 @@ public class LeastConnectionsBalancer<N> implements Balancer<N> {
     }
   }
 
+  private final Map<N, NodeStat<N>> stats;
   private final long faultTimerNs;
-  private final ConcurrentMap<N, NodeStat<N>> stats = new MapMaker().
-      concurrencyLevel(getRuntime().availableProcessors()).
-      makeComputingMap(new Function<N, NodeStat<N>>() {
-        public NodeStat<N> apply(N node) {
-          return new NodeStat<N>(node);
-        }
-      });
 
-  public LeastConnectionsBalancer(long faultTimer, TimeUnit unit) {
+  public LeastConnectionsBalancer(Iterable<N> nodes, long faultTimer, TimeUnit unit) {
+    ImmutableMap.Builder<N, NodeStat<N>> builder = ImmutableMap.builder();
+    for (N node : nodes)
+      builder.put(node, new NodeStat<N>(node));
+    stats = builder.build();
+
     faultTimerNs = unit.toNanos(faultTimer);
   }
 
@@ -48,11 +45,10 @@ public class LeastConnectionsBalancer<N> implements Balancer<N> {
       boolean leftAlive = (nanoTime() - left.lastFault) > faultTimerNs;
       boolean rightAlive = (nanoTime() - right.lastFault) > faultTimerNs;
 
-      int comparison = Booleans.compare(leftAlive, rightAlive);
-      if (comparison != 0)
-        return comparison;
-
-      return -Ints.compare(left.connections.get(), right.connections.get());
+      if (leftAlive == rightAlive)
+        return -Ints.compare(left.connections.get(), right.connections.get());
+      else
+        return leftAlive ? +1 : -1;
     }
   };
 

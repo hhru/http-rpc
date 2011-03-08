@@ -2,6 +2,7 @@ package ru.hh.httprpc;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import static java.lang.String.format;
@@ -11,11 +12,12 @@ import static java.util.Arrays.asList;
 import java.util.Collection;
 import java.util.List;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 import ru.hh.httprpc.balancer.Balancer;
-import ru.hh.httprpc.balancer.RandomRobinBalancer;
+import ru.hh.httprpc.balancer.LeastConnectionsBalancer;
 import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.concurrent.AsyncToolbox;
 import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
@@ -54,8 +56,8 @@ public class Example {
     );
 
     final Timer timer = new HashedWheelTimer(5, MILLISECONDS);
-    final Balancer<InetSocketAddress> balancer = new RandomRobinBalancer<InetSocketAddress>();
-//    final Balancer<InetSocketAddress> balancer = new LeastConnectionsBalancer<InetSocketAddress>(1, SECONDS);
+//    final Balancer<InetSocketAddress> balancer = new RandomRobinBalancer<InetSocketAddress>();
+    final Balancer<InetSocketAddress> balancer = new LeastConnectionsBalancer<InetSocketAddress>(Iterables.concat(geometry), 1, SECONDS);
 
     RPCHandler metaHandler = new RPCHandler(new JavaSerializer());
     metaHandler.register(SampleAPI.COUNT_MATCHES, new ServerMethod<String, Integer>() {
