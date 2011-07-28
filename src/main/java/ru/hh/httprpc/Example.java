@@ -5,14 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import static java.lang.String.format;
-import static java.lang.System.out;
-import java.net.InetSocketAddress;
-import static java.util.Arrays.asList;
-import java.util.Collection;
-import java.util.List;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
@@ -24,6 +16,16 @@ import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.RoutingHandler;
 import ru.hh.httprpc.util.netty.Timers;
+
+import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.List;
+
+import static java.lang.String.format;
+import static java.lang.System.out;
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 interface SampleAPI {
   RPC<String, Integer> COUNT_MATCHES = RPC.signature("/countMatches", String.class, Integer.class);
@@ -78,7 +80,7 @@ public class Example {
         Timers.scheduleTimeout(future, timer, envelope.timeoutMillis, MILLISECONDS);
 
         // This should use a normal executor, as merging can be relatively costly(?) and we're better not do it on a network thread
-        return Futures.compose(future, sampleFoldFunction(), CallingThreadExecutor.instance());
+        return Futures.transform(future, sampleFoldFunction(), CallingThreadExecutor.instance());
       }
     });
     RoutingHandler metaRouter = new RoutingHandler(

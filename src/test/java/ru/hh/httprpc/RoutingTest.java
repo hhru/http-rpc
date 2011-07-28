@@ -1,19 +1,19 @@
 package ru.hh.httprpc;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.inject.internal.ImmutableMap;
+import org.jboss.netty.channel.ChannelHandler;
+import org.testng.annotations.Test;
+import ru.hh.httprpc.serialization.JavaSerializer;
+import ru.hh.httprpc.util.netty.RoutingHandler;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
-import org.jboss.netty.channel.ChannelHandler;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-import org.testng.annotations.Test;
-import ru.hh.httprpc.serialization.JavaSerializer;
-import ru.hh.httprpc.util.netty.RoutingHandler;
+
+import static org.testng.Assert.*;
 
 public class RoutingTest {
   @Test

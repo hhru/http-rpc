@@ -1,19 +1,21 @@
 package ru.hh.httprpc;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.inject.internal.ImmutableMap;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.concurrent.ExecutionException;
 import org.jboss.netty.channel.ChannelHandler;
-import static org.testng.Assert.assertEquals;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import ru.hh.httprpc.serialization.ProtobufSerializer;
 import ru.hh.httprpc.util.netty.RoutingHandler;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.concurrent.ExecutionException;
+
+import static org.testng.Assert.assertEquals;
 
 public class ProtobufTest {
   protected String basePath = "/apiBase";

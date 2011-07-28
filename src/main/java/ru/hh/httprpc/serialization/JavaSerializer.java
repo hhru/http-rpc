@@ -1,27 +1,28 @@
 package ru.hh.httprpc.serialization;
 
 import com.google.common.base.Function;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import ru.hh.httprpc.util.FastObjectInputStream;
 
-public class JavaSerializer implements Serializer {
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+public class JavaSerializer implements Serializer<Object, Object> {
   public String getContentType() {
     return "application/x-java-serialized-object";
   }
 
   @SuppressWarnings("unchecked")
-  public <T> Function<T, ChannelBuffer> encoder(Class<T> clazz) {
-    return (Function<T, ChannelBuffer>) ENCODER;
+  public Function<Object, ChannelBuffer> encoder(Class<Object> clazz) {
+    return (Function<Object, ChannelBuffer>) ENCODER;
   }
 
   @SuppressWarnings("unchecked")
-  public <T> Function<ChannelBuffer, T> decoder(Class<T> clazz) {
-    return (Function<ChannelBuffer, T>) DECODER;
+  public Function<ChannelBuffer, Object> decoder(Class<Object> clazz) {
+    return (Function<ChannelBuffer, Object>) DECODER;
   }
 
   private static Function<Object, ChannelBuffer> ENCODER = new Function<Object, ChannelBuffer>() {

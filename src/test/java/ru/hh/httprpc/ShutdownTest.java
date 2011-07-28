@@ -1,13 +1,13 @@
 package ru.hh.httprpc;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import org.testng.annotations.Test;
+
 import java.net.ConnectException;
 import java.util.concurrent.ExecutionException;
+
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 public class ShutdownTest extends AbstractClientServerTest {
   @Test

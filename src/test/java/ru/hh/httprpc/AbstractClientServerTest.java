@@ -1,14 +1,15 @@
 package ru.hh.httprpc;
 
-import com.google.inject.internal.ImmutableMap;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import com.google.common.collect.ImmutableMap;
 import org.jboss.netty.channel.ChannelHandler;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.netty.RoutingHandler;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 
 public abstract class AbstractClientServerTest {
   protected static final RPC<Long, Long> LONG2LONG_METHOD = RPC.signature("/method", Long.class, Long.class);

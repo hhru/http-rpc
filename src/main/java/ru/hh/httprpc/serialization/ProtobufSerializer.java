@@ -7,16 +7,16 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 
-public class ProtobufSerializer implements Serializer {
+public class ProtobufSerializer implements Serializer<Message,Message> {
   public String getContentType() {
     return "application/x-protobuf";
   }
 
-  public <T> Function<T, ChannelBuffer> encoder(Class<T> clazz) {
-    return new Function<T, ChannelBuffer>() {
-      public ChannelBuffer apply(T object) {
+  public Function<Message, ChannelBuffer> encoder(Class<Message> clazz) {
+    return new Function<Message, ChannelBuffer>() {
+      public ChannelBuffer apply(Message object) {
         try {
-          return ChannelBuffers.wrappedBuffer(((Message) object).toByteArray());
+          return ChannelBuffers.wrappedBuffer(object.toByteArray());
         } catch (Exception e) {
           throw new SerializationException(e);
         }
@@ -25,7 +25,7 @@ public class ProtobufSerializer implements Serializer {
   }
 
   @SuppressWarnings({"unchecked"})
-  public <T> Function<ChannelBuffer, T> decoder(Class<T> clazz) {
+  public Function<ChannelBuffer, Message> decoder(Class<Message> clazz) {
     final Message prototype;
     try {
       prototype = (Message) clazz.getMethod("getDefaultInstance").invoke(null);
@@ -33,13 +33,13 @@ public class ProtobufSerializer implements Serializer {
       throw Throwables.propagate(e);
     }
 
-    return new Function<ChannelBuffer, T>() {
-      public T apply(ChannelBuffer serialForm) {
+    return new Function<ChannelBuffer, Message>() {
+      public Message apply(ChannelBuffer serialForm) {
         try {
           if (serialForm.hasArray())
-            return (T) prototype.newBuilderForType().mergeFrom(serialForm.array(), serialForm.arrayOffset(), serialForm.readableBytes()).build();
+            return prototype.newBuilderForType().mergeFrom(serialForm.array(), serialForm.arrayOffset(), serialForm.readableBytes()).build();
           else
-            return (T) prototype.newBuilderForType().mergeFrom(new ChannelBufferInputStream(serialForm)).build();
+            return prototype.newBuilderForType().mergeFrom(new ChannelBufferInputStream(serialForm)).build();
         } catch (Exception e) {
           throw new SerializationException(e);
         }

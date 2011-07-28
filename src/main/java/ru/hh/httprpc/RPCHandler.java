@@ -5,8 +5,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.MapMaker;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import static java.lang.String.format;
-import java.util.concurrent.ConcurrentMap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -14,19 +12,20 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.OK;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
-import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
 import ru.hh.httprpc.serialization.SerializationException;
 import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.Http;
 import ru.hh.httprpc.util.netty.HttpHandler;
+
+import java.util.concurrent.ConcurrentMap;
+
+import static java.lang.String.format;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
+import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
+import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
 
 @Sharable
 public class RPCHandler extends HttpHandler {
@@ -80,7 +79,7 @@ public class RPCHandler extends HttpHandler {
         }
 
         protected void exception(Throwable e) {
-          sendError(channel, INTERNAL_SERVER_ERROR, e, "'%s' method future failed", path);
+          exceptionHandler(e, channel, path);
         }
       };
 
@@ -90,12 +89,18 @@ public class RPCHandler extends HttpHandler {
             logger.debug("'{}' method call was cancelled by client ({})", path, channel.getRemoteAddress());
         }
       });
-    } catch (IllegalArgumentException e) {
-      sendError(channel, BAD_REQUEST, e, "bad parameters for '%s'", path);
-    } catch (SerializationException e) {
-      sendError(channel, BAD_REQUEST, e, "bad request body for '%s'", path);
     } catch (Exception e) {
-      sendError(channel, INTERNAL_SERVER_ERROR, e, "'%s' method call failed", path);
+      exceptionHandler(e, channel, path);
+    }
+  }
+
+  private void exceptionHandler(Throwable e, Channel channel, String path) {
+    if (e instanceof IllegalArgumentException) {
+      sendError(channel, BAD_REQUEST, e, "bad parameters for '%s'", path);
+    } else if (e instanceof SerializationException) {
+      sendError(channel, BAD_REQUEST, e, "bad request body for '%s'", path);
+    } else {
+      sendError(channel, INTERNAL_SERVER_ERROR, e, "'%s' method future failed", path);
     }
   }
 
@@ -118,7 +123,7 @@ public class RPCHandler extends HttpHandler {
     }
 
     public ListenableFuture<ChannelBuffer> call(Envelope envelope, ChannelBuffer input) {
-      return Futures.compose(method.call(envelope, decoder.apply(input)), encoder);
+      return Futures.transform(method.call(envelope, decoder.apply(input)), encoder);
     }
   }
 }
