@@ -70,6 +70,10 @@ public class Http {
       return containing(Throwables.getStackTraceAsString(throwable));
     }
 
+    public SELF containing(String message, Throwable throwable) {
+      return containing(message + "\n" + Throwables.getStackTraceAsString(throwable));
+    }
+
     public ChannelFuture sendTo(Channel channel) {
       return sendTo(channel, false);
     }
