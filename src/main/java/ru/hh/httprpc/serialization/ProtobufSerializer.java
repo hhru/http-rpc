@@ -9,7 +9,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 
 public class ProtobufSerializer implements Serializer<Message,Message> {
   public String getContentType() {
-    return "application/x-protobuf";
+    return "application/x-www-form-urlencoded";
   }
 
   public Function<Message, ChannelBuffer> encoder(Class<Message> clazz) {
