@@ -118,6 +118,7 @@ public class RPCClient extends AbstractService {
                     param(HttpRpcNames.TIMEOUT, envelope.timeoutMillis).
                     param(HttpRpcNames.REQUEST_ID, envelope.requestId)
             ).
+                host(address.toString()).
                 containing(serializer.getContentType(), encoder.apply(input)).
                 sendTo(channel);
           } else {

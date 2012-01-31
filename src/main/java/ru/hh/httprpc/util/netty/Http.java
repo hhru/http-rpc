@@ -18,6 +18,7 @@ import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.HOST;
 import org.jboss.netty.handler.codec.http.HttpMessage;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -48,6 +49,12 @@ public class Http {
     protected HttpMessageBuilder(MESSAGE message) {
       this.message = message;
       HttpHeaders.setKeepAlive(message, false);
+    }
+
+    public SELF host(String hostName) {
+      message.setHeader(HOST, hostName);
+
+      return self;
     }
 
     public SELF containing(String contentType, ChannelBuffer buffer) {
