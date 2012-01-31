@@ -9,9 +9,9 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import ru.hh.httprpc.serialization.ProtobufSerializer;
 import ru.hh.httprpc.util.netty.RoutingHandler;
+import ru.hh.httprpc.InetSocketAddress;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 
@@ -41,7 +41,7 @@ public class ProtobufTest {
   }
 
   @Test
-  public void test() throws ExecutionException, InterruptedException {
+  public void test() throws ExecutionException, InterruptedException, UnknownHostException {
     RPC<Messages.Request, Messages.Reply> signature = RPC.signature("/helloMethod", Messages.Request.class, Messages.Reply.class);
     ProtobufMethod serverMethod = new ProtobufMethod();
     serverHandler.register(signature, serverMethod);

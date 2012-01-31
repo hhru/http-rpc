@@ -16,8 +16,8 @@ import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.RoutingHandler;
 import ru.hh.httprpc.util.netty.Timers;
+import ru.hh.httprpc.InetSocketAddress;
 
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.List;
 

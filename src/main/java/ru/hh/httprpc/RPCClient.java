@@ -4,7 +4,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -103,7 +102,6 @@ public class RPCClient extends AbstractService {
       Preconditions.checkNotNull(envelope, "envelope");
 
       ChannelFuture connectFuture = bootstrap.connect(address);
-
       final Channel channel = connectFuture.getChannel();
       final ClientFuture<O> clientFuture = new ClientFuture<O>(channel);
       allChannels.add(channel);
@@ -118,7 +116,7 @@ public class RPCClient extends AbstractService {
                     param(HttpRpcNames.TIMEOUT, envelope.timeoutMillis).
                     param(HttpRpcNames.REQUEST_ID, envelope.requestId)
             ).
-                host(address.toString()).
+                host(address.getHostHttpHeaderValue()).
                 containing(serializer.getContentType(), encoder.apply(input)).
                 sendTo(channel);
           } else {

@@ -7,9 +7,9 @@ import org.jboss.netty.channel.ChannelHandler;
 import org.testng.annotations.Test;
 import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.netty.RoutingHandler;
+import ru.hh.httprpc.InetSocketAddress;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 
