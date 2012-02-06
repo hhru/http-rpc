@@ -6,7 +6,6 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import ru.hh.httprpc.serialization.JavaSerializer;
 import ru.hh.httprpc.util.netty.RoutingHandler;
-import ru.hh.httprpc.InetSocketAddress;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

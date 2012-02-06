@@ -27,6 +27,8 @@ public class RPCServiceExporter implements InitializingBean {
   private String host;
   private int port;
   private int ioThreadsCount;
+  private boolean tcpNoDelay;
+  private int backlog = 50; // 50 is default value from java.net.ServerSocket
   protected RPCHandler handler = new RPCHandler(serializer);
 
   @Override
@@ -54,7 +56,11 @@ public class RPCServiceExporter implements InitializingBean {
 
   private void initServer(InetAddress host) {
     InetSocketAddress address = new InetSocketAddress(host, port);
-    server = new HTTPServer(TcpOptions.create().localAddress(address), ioThreadsCount, handler);
+    final TcpOptions tcpOptions = TcpOptions.create()
+        .localAddress(address)
+        .tcpNoDelay(tcpNoDelay)
+        .backlog(backlog);
+    server = new HTTPServer(tcpOptions, ioThreadsCount, handler);
     LoggerFactory.getLogger(RPCServiceExporter.class).info(String.format("Started protobuf server at %s", address.toString()));
   }
 
@@ -114,5 +120,13 @@ public class RPCServiceExporter implements InitializingBean {
 
   public void setIoThreadsCount(int ioThreadsCount) {
     this.ioThreadsCount = ioThreadsCount;
+  }
+
+  public void setTcpNoDelay(boolean tcpNoDelay) {
+    this.tcpNoDelay = tcpNoDelay;
+  }
+
+  public void setBacklog(int backlog) {
+    this.backlog = backlog;
   }
 }
