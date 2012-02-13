@@ -24,15 +24,13 @@ public abstract class FutureListener<T> implements Runnable {
   public void run() {
     try {
       success(future.get());
-      done();
     } catch (ExecutionException e) {
       exception(e.getCause());
-      done();
     } catch (CancellationException e) {
       cancelled();
-      done();
     } catch (InterruptedException e) {
       interrupted(e);
+    } finally {
       done();
     }
   }

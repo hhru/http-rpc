@@ -1,8 +1,10 @@
 package ru.hh.httprpc.exporter;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import ru.hh.httprpc.Envelope;
+import ru.hh.httprpc.util.concurrent.FutureListener;
 
 public class EnvelopeController implements RpcController {
 
@@ -66,6 +68,30 @@ public class EnvelopeController implements RpcController {
 
   public Throwable getReason() {
     return failed ? reason : null;
+  }
+
+  public <T> void listenToFuture(ListenableFuture<T> future, final RpcCallback<T> done) {
+    new FutureListener<T>(future) {
+      protected void success(T result) {
+         done.run(result);
+      }
+
+      protected void exception(Throwable t) {
+        setFailed(t);
+        done.run(null);
+      }
+
+      protected void cancelled() {
+        setFailed("Request was cancelled by client");
+        done.run(null);
+      }
+
+      protected void interrupted(InterruptedException e) {
+        super.interrupted(e);
+        setFailed(e);
+        done.run(null);
+      }
+    };
   }
 }
 

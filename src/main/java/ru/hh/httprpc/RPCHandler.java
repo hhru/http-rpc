@@ -95,10 +95,11 @@ public class RPCHandler extends HttpHandler {
   }
 
   private void exceptionHandler(Throwable e, Channel channel, String path) {
-    if (e instanceof IllegalArgumentException) {
+    if (e instanceof RPCMethodException) {
+      RPCMethodException methodException = (RPCMethodException) e;
+      sendError(channel, methodException.getStatus(), e, e.getMessage(), path);
+    } else if (e instanceof IllegalArgumentException) {
       sendError(channel, BAD_REQUEST, e, "bad parameters for '%s'", path);
-    } else if (e instanceof SerializationException) {
-      sendError(channel, BAD_REQUEST, e, "bad request body for '%s'", path);
     } else {
       sendError(channel, INTERNAL_SERVER_ERROR, e, "'%s' method future failed", path);
     }

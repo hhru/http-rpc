@@ -6,6 +6,7 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.Service;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import ru.hh.httprpc.Envelope;
@@ -22,6 +23,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 public class RPCServiceExporter implements InitializingBean {
+  private static final Logger log = LoggerFactory.getLogger(RPCServiceExporter.class);
   private final ProtobufSerializer serializer = new ProtobufSerializer();
   private HTTPServer server;
   private String host;
@@ -44,6 +46,7 @@ public class RPCServiceExporter implements InitializingBean {
   public void start(InetAddress host) {
     initServer(host);
     server.start();
+    log.info(String.format("Started protobuf server at %s:%d", host.toString(), port));
   }
 
   public void stopAndWait() {
@@ -61,7 +64,7 @@ public class RPCServiceExporter implements InitializingBean {
         .tcpNoDelay(tcpNoDelay)
         .backlog(backlog);
     server = new HTTPServer(tcpOptions, ioThreadsCount, handler);
-    LoggerFactory.getLogger(RPCServiceExporter.class).info(String.format("Started protobuf server at %s", address.toString()));
+    log.info(String.format("Started protobuf server at %s", address.toString()));
   }
 
   public void setServices(List<Service> services) {
@@ -102,7 +105,7 @@ public class RPCServiceExporter implements InitializingBean {
       };
 
       handler.register(signature, method);
-      LoggerFactory.getLogger(RPCServiceExporter.class).info(String.format("Method %s was registered at path %s", methodName, path));
+      log.info(String.format("Method %s was registered at path %s", methodName, path));
     }
   }
 
