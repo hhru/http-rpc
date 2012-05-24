@@ -1,9 +1,9 @@
 package ru.hh.httprpc;
 
-import com.google.common.util.concurrent.AbstractListenableFuture;
+import com.google.common.util.concurrent.AbstractFuture;
 import org.jboss.netty.channel.Channel;
 
-class ClientFuture<V> extends AbstractListenableFuture<V> {
+class ClientFuture<V> extends AbstractFuture<V> {
   private final Channel channel;
 
   public ClientFuture(Channel channel) {
@@ -15,7 +15,7 @@ class ClientFuture<V> extends AbstractListenableFuture<V> {
    */
   @Override
   public boolean cancel(boolean mayInterruptIfRunning) {
-    if (cancel()) {
+    if (super.cancel(mayInterruptIfRunning)) {
       channel.close();
       return true;
     } else

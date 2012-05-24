@@ -16,7 +16,7 @@ public class ListenableThreadPoolExecutor extends ThreadPoolExecutor implements 
 
   @Override
   protected <T> ListenableFutureTask<T> newTaskFor(Callable<T> callable) {
-    return new ListenableFutureTask<T>(callable);
+    return ListenableFutureTask.create(callable);
   }
 
   @Override

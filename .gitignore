@@ -3,3 +3,6 @@
 /http-rpc.iws
 /.idea
 /target/
+/.classpath
+/.project
+/.settings

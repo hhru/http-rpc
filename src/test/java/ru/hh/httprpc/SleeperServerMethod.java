@@ -1,7 +1,8 @@
 package ru.hh.httprpc;
 
-import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.JdkFutureAdapters;
 import com.google.common.util.concurrent.ListenableFuture;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -15,7 +16,7 @@ class SleeperServerMethod implements ServerMethod<Long, Long> {
   private final CountDownLatch interrupted = new CountDownLatch(1);
 
   public ListenableFuture<Long> call(Envelope envelope, final Long argument) {
-    return Futures.makeListenable(executor.submit(new Callable<Long>() {
+    return JdkFutureAdapters.listenInPoolThread(executor.submit(new Callable<Long>() {
       @Override
       public Long call() throws Exception {
         try {

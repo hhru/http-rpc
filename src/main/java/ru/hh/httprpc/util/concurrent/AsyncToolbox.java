@@ -3,21 +3,24 @@ package ru.hh.httprpc.util.concurrent;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import static com.google.common.collect.Lists.newArrayList;
-import com.google.common.util.concurrent.AbstractListenableFuture;
+import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
+
 import java.util.ArrayList;
 import java.util.Collection;
-import static java.util.Collections.synchronizedList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.Timer;
+
+import static com.google.common.collect.Lists.newArrayList;
+import static java.util.Collections.synchronizedList;
 import static ru.hh.httprpc.util.netty.Timers.asTimerTask;
 
+// See history of this class, with upping guava version some functionality had to go. This might not work as intended.
 public class AsyncToolbox {
   public static <T, O> ListenableFuture<O> callAny(Function<T, ListenableFuture<O>> call, Iterable<T> targets, long nextTargetDelay, TimeUnit unit, Timer timer) {
     return new CallAny<T, O>(call, targets, nextTargetDelay, unit, timer);
@@ -27,7 +30,7 @@ public class AsyncToolbox {
     return new CallEvery<T, O>(call, targets);
   }
 
-  private static class CallEvery<T, O> extends AbstractListenableFuture<Collection<O>> {
+  private static class CallEvery<T, O> extends AbstractFuture<Collection<O>> {
     private final List<Future<O>> futures;
     private final List<O> results;
     private final AtomicInteger inFlight;
@@ -67,7 +70,7 @@ public class AsyncToolbox {
     }
   }
 
-  private static class CallAny<I, O> extends AbstractListenableFuture<O> {
+  private static class CallAny<I, O> extends AbstractFuture<O> {
     private final List<Future<?>> futures = newArrayList();
     private final Function<I, ListenableFuture<O>> call;
 
@@ -121,16 +124,7 @@ public class AsyncToolbox {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-      return cancel();
-    }
-
-    protected void done() {
-      synchronized (futures) {
-        for (Future<?> future : futures)
-          future.cancel(true);
-      }
-
-      super.done(); // Run listeners
+      return super.cancel(mayInterruptIfRunning);
     }
   }
 }
