@@ -8,80 +8,29 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import ru.hh.httprpc.Envelope;
-import ru.hh.httprpc.HTTPServer;
 import ru.hh.httprpc.RPC;
-import ru.hh.httprpc.RPCHandler;
 import ru.hh.httprpc.ServerMethod;
-import ru.hh.httprpc.TcpOptions;
 import ru.hh.httprpc.serialization.ProtobufSerializer;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.List;
-
-public class RPCServiceExporter implements InitializingBean {
+public class RPCServiceExporter extends AbstractRPCServiceExporter<Service> {
   private static final Logger log = LoggerFactory.getLogger(RPCServiceExporter.class);
-  private final ProtobufSerializer serializer = new ProtobufSerializer();
-  private HTTPServer server;
-  private String host;
-  private int port;
-  private int ioThreadsCount;
-  private boolean tcpNoDelay;
-  private int backlog = 50; // 50 is default value from java.net.ServerSocket
-  protected RPCHandler handler = new RPCHandler(serializer);
+
+  public RPCServiceExporter() {
+    super(new ProtobufSerializer());
+  }
 
   @Override
-  public void afterPropertiesSet() throws UnknownHostException {
-    start(InetAddress.getByName(host));
-  }
-
-  public void startAndWait(InetAddress host) {
-    initServer(host);
-    server.startAndWait();
-  }
-
-  public void start(InetAddress host) {
-    initServer(host);
-    server.start();
-    log.info(String.format("Started protobuf server at %s:%d", host.toString(), port));
-  }
-
-  public void stopAndWait() {
-    server.stopAndWait();
-  }
-
-  public void stop() {
-    server.stop();
-  }
-
-  private void initServer(InetAddress host) {
-    InetSocketAddress address = new InetSocketAddress(host, port);
-    final TcpOptions tcpOptions = TcpOptions.create()
-        .localAddress(address)
-        .tcpNoDelay(tcpNoDelay)
-        .backlog(backlog);
-    server = new HTTPServer(tcpOptions, ioThreadsCount, handler);
-    log.info(String.format("Started protobuf server at %s", address.toString()));
-  }
-
-  public void setServices(List<Service> services) {
-    for (Service service : services) {
-      registerService(service);
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private void registerService(final Service service) {
+  protected void registerService(final Service service) {
     String serviceName = service.getDescriptorForType().getName();
     for (final Descriptors.MethodDescriptor methodDescriptor : service.getDescriptorForType().getMethods()) {
       String methodName = methodDescriptor.getName();
       final String path  = String.format("/%s/%s", serviceName, methodName);
 
+      @SuppressWarnings("unchecked")
       Class<Message> i = (Class<Message>) service.getRequestPrototype(methodDescriptor).getClass();
-      Class<Message> o = (Class<Message>) service.getRequestPrototype(methodDescriptor).getClass();
+      @SuppressWarnings("unchecked")
+      Class<Message> o = (Class<Message>) service.getResponsePrototype(methodDescriptor).getClass();
       RPC<Message, Message> signature = RPC.signature(path, i, o);
 
       ServerMethod<Message, Message> method = new ServerMethod<Message, Message>() {
@@ -109,27 +58,4 @@ public class RPCServiceExporter implements InitializingBean {
     }
   }
 
-  public String getHost() {
-    return host;
-  }
-
-  public void setHost(String host) {
-    this.host = host;
-  }
-
-  public void setPort(int port) {
-    this.port = port;
-  }
-
-  public void setIoThreadsCount(int ioThreadsCount) {
-    this.ioThreadsCount = ioThreadsCount;
-  }
-
-  public void setTcpNoDelay(boolean tcpNoDelay) {
-    this.tcpNoDelay = tcpNoDelay;
-  }
-
-  public void setBacklog(int backlog) {
-    this.backlog = backlog;
-  }
 }
