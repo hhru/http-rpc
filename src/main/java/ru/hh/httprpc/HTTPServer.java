@@ -1,9 +1,8 @@
 package ru.hh.httprpc;
 
 import com.google.common.util.concurrent.AbstractService;
-import ru.hh.httprpc.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 
-import java.net.Inet4Address;
 import java.util.concurrent.Executors;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -90,9 +89,11 @@ public class HTTPServer extends AbstractService {
 
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
       logger.error("Unexpected exception ", e.getCause());
-      Http.response(INTERNAL_SERVER_ERROR).
-          containing(e.getCause()).
-          sendAndClose(e.getChannel());
+      if (!(ClosedChannelException.class.isInstance(e.getCause()))) {
+        Http.response(INTERNAL_SERVER_ERROR).
+            containing(e.getCause()).
+            sendAndClose(e.getChannel());
+      }
     }
 
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
