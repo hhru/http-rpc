@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
@@ -27,7 +28,10 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.timeout.ReadTimeoutHandler;
 import org.jboss.netty.util.CharsetUtil;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.httprpc.serialization.Serializer;
@@ -35,7 +39,8 @@ import ru.hh.httprpc.util.netty.Http;
 
 public class RPCClient extends AbstractService {
   public static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
-  
+
+  private final Timer timer = new HashedWheelTimer(10, TimeUnit.MILLISECONDS);
   private final String basePath;
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
@@ -75,6 +80,8 @@ public class RPCClient extends AbstractService {
     } catch (RuntimeException e) {
       logger.error("shutdown failed", e);
       throw e;
+    } finally {
+      timer.stop();
     }
   }
 
@@ -109,6 +116,7 @@ public class RPCClient extends AbstractService {
       connectFuture.addListener(new ChannelFutureListener() {
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
+            channel.getPipeline().addFirst(ReadTimeoutHandler.class.getSimpleName(), new ReadTimeoutHandler(timer, envelope.timeoutMillis, TimeUnit.MILLISECONDS));
             channel.getPipeline().addLast("handler", new ClientHandler(clientFuture));
             Http.request(
                 HttpMethod.POST,
