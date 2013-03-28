@@ -43,11 +43,19 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
   public void startAndWait(InetAddress host) {
     initServer(host);
     server.startAndWait();
+    updateServerPort();
   }
 
   public void start(InetAddress host) {
     initServer(host);
     server.start();
+    updateServerPort();
+  }
+
+  private void updateServerPort() {
+    if (port == 0) {
+      port = server.getLocalAddress().getPort();
+    }
   }
 
   public void stopAndWait() {
@@ -74,6 +82,10 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
 
   public void setHost(String host) {
     this.host = host;
+  }
+
+  public int getPort() {
+    return port;
   }
 
   public void setPort(int port) {
