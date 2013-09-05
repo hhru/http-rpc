@@ -103,4 +103,8 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
   public void setBacklog(int backlog) {
     this.backlog = backlog;
   }
+
+  public void setProhibitCancellation(boolean prohibitCancellation) {
+    handler.setProhibitCancellation(prohibitCancellation);
+  }
 }

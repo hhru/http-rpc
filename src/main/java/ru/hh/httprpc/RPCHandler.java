@@ -14,7 +14,6 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.httprpc.serialization.SerializationException;
 import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.Http;
@@ -33,6 +32,7 @@ public class RPCHandler extends HttpHandler {
 
   private final Serializer serializer;
   private final ConcurrentMap<String, ServerMethodDescriptor<?, ?>> methods;
+  private volatile boolean prohibitCancellation = false;
 
   public RPCHandler(Serializer serializer) {
     this.serializer = serializer;
@@ -83,12 +83,14 @@ public class RPCHandler extends HttpHandler {
         }
       };
 
-      channel.getCloseFuture().addListener(new ChannelFutureListener() {
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if (methodFuture.cancel(true))
-            logger.debug("'{}' method call was cancelled by client ({})", path, channel.getRemoteAddress());
-        }
-      });
+      if (!prohibitCancellation) {
+        channel.getCloseFuture().addListener(new ChannelFutureListener() {
+          public void operationComplete(ChannelFuture future) throws Exception {
+            if (methodFuture.cancel(true))
+              logger.debug("'{}' method call was cancelled by client ({})", path, channel.getRemoteAddress());
+          }
+        });
+      }
     } catch (Exception e) {
       exceptionHandler(e, channel, path);
     }
@@ -126,5 +128,9 @@ public class RPCHandler extends HttpHandler {
     public ListenableFuture<ChannelBuffer> call(Envelope envelope, ChannelBuffer input) {
       return Futures.transform(method.call(envelope, decoder.apply(input)), encoder);
     }
+  }
+
+  public void setProhibitCancellation(boolean prohibitCancellation) {
+    this.prohibitCancellation = prohibitCancellation;
   }
 }
