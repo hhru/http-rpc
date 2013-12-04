@@ -88,8 +88,10 @@ public class HTTPServer extends AbstractService {
     private final ChannelGroup group = new DefaultChannelGroup();
 
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-      logger.error("Unexpected exception ", e.getCause());
-      if (!(ClosedChannelException.class.isInstance(e.getCause()))) {
+      if (ClosedChannelException.class.isInstance(e.getCause())) {
+        logger.debug("Got " + e.getCause().getClass().getName());
+      } else {
+        logger.error("Unexpected exception ", e.getCause());
         Http.response(INTERNAL_SERVER_ERROR).
             containing(e.getCause()).
             sendAndClose(e.getChannel());
