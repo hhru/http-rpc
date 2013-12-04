@@ -1,19 +1,21 @@
 package ru.hh.httprpc.util;
 
-import com.google.common.base.Function;
 import com.google.common.base.Throwables;
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 public class FastObjectInputStream extends ObjectInputStream {
-  private static final ConcurrentMap<String, Class<?>> CLASS_CACHE = new MapMaker().
+  private static final LoadingCache<String, Class<?>> CLASS_CACHE = CacheBuilder.newBuilder().
       concurrencyLevel(Runtime.getRuntime().availableProcessors()).
-      makeComputingMap(new Function<String, Class<?>>() {
-        public Class<?> apply(String input) {
+      build(new CacheLoader<String, Class<?>>() {
+        @Override
+        public Class<?> load(String input) throws Exception {
           try {
             return Class.forName(input);
           } catch (ClassNotFoundException e) {
@@ -27,6 +29,10 @@ public class FastObjectInputStream extends ObjectInputStream {
   }
 
   protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-    return CLASS_CACHE.get(desc.getName());
+    try {
+      return CLASS_CACHE.get(desc.getName());
+    } catch (ExecutionException e) {
+      throw Throwables.propagate(e);
+    }
   }
 }
