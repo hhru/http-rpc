@@ -37,25 +37,25 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>13.0</version>
+      <version>15.0</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.6.1</version>
+      <version>1.7.5</version>
     </dependency>
 
     <!-- optional Spring for HTTPInvoker compatibility -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
-      <version>2.5.6</version>
+      <version>${spring.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-aop</artifactId>
-      <version>2.5.6</version>
+      <version>${spring.version}</version>
       <optional>true</optional>
     </dependency>
 
@@ -71,14 +71,18 @@
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <version>6.0.1</version>
+      <version>6.8.7</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>0.9.28</version>
+      <version>1.0.13</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <properties>
+    <spring.version>3.2.5.RELEASE</spring.version>
+  </properties>
 </project>
