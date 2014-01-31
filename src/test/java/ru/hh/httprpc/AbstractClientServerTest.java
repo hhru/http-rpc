@@ -27,14 +27,14 @@ public abstract class AbstractClientServerTest {
     RoutingHandler router = new RoutingHandler(
       ImmutableMap.<String, ChannelHandler>builder().put(basePath, serverHandler).build());
     server = new HTTPServer(serverOptions, ioThreads, router);
-    server.startAndWait();
+    server.startAsync().awaitRunning();
     address = server.getLocalAddress();
     client = new RPCClient(TcpOptions.create(), basePath, ioThreads, new JavaSerializer());
   }
 
   @AfterMethod
   public void stop() {
-    client.stopAndWait();
-    server.stopAndWait();
+    client.stopAsync().awaitTerminated();
+    server.stopAsync().awaitTerminated();
   }
 }

@@ -30,14 +30,14 @@ public class ProtobufTest {
     RoutingHandler router = new RoutingHandler(
       ImmutableMap.<String, ChannelHandler>builder().put(basePath, serverHandler).build());
     server = new HTTPServer(serverOptions, 2, router);
-    server.startAndWait();
+    server.startAsync().awaitRunning();
     client = new RPCClient(TcpOptions.create(), basePath, 2, new ProtobufSerializer());
   }
 
   @AfterMethod
   public void stop() {
-    client.stopAndWait();
-    server.stopAndWait();
+    client.stopAsync().awaitTerminated();
+    server.stopAsync().awaitTerminated();
   }
 
   @Test

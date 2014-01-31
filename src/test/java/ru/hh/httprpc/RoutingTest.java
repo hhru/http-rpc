@@ -33,7 +33,7 @@ public class RoutingTest {
     RPCClient client3 = new RPCClient(TcpOptions.create(), "/noexisting", 2, serializer);
     
     RPC<Void, String> signature = RPC.signature("/method", Void.class, String.class);
-    server.startAndWait();
+    server.startAsync().awaitRunning();
     try {
       handler1.register(signature, new ServerMethod<Void, String>() {
         @Override
@@ -67,10 +67,10 @@ public class RoutingTest {
       }
 
     } finally {
-      client1.stopAndWait();
-      client2.stopAndWait();
-      client3.stopAndWait();
-      server.stopAndWait();
+      client1.stopAsync().awaitTerminated();
+      client2.stopAsync().awaitTerminated();
+      client3.stopAsync().awaitTerminated();
+      server.stopAsync().awaitTerminated();
     }
   }
 }

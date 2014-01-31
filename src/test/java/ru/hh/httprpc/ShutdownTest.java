@@ -1,6 +1,7 @@
 package ru.hh.httprpc;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import java.util.concurrent.TimeUnit;
 import org.testng.annotations.Test;
 
 import java.net.ConnectException;
@@ -18,7 +19,8 @@ public class ShutdownTest extends AbstractClientServerTest {
     ClientMethod<Long, Long> clientMethod = client.createMethod(LONG2LONG_METHOD);
 
     ListenableFuture<Long> future = clientMethod.call(address, new Envelope(), 100L); // do a (non-instant) call,
-    server.stopAndWait(); // and immediately shutdown the server, waiting for live connections to complete
+    TimeUnit.MILLISECONDS.sleep(10); // sleep 10ms to give a time for request to start
+    server.stopAsync().awaitTerminated(); // and immediately shutdown the server, waiting for live connections to complete
 
     assertTrue(serverMethod.completedWithin(1, SECONDS)); // ensure call went through
     assertEquals(future.get(1, SECONDS), new Long(100)); // and returned something meaninful
