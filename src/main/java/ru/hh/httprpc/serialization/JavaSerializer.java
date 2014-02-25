@@ -1,48 +1,50 @@
 package ru.hh.httprpc.serialization;
 
 import com.google.common.base.Function;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import ru.hh.httprpc.util.FastObjectInputStream;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class JavaSerializer implements Serializer<Object, Object> {
+  @Override
   public String getContentType() {
     return "application/x-java-serialized-object";
   }
 
-  @SuppressWarnings("unchecked")
-  public Function<Object, ChannelBuffer> encoder(Class<Object> clazz) {
-    return (Function<Object, ChannelBuffer>) ENCODER;
+  @Override
+  public Function<Object, ByteBuf> encoder(Class<Object> clazz) {
+    return ENCODER;
   }
 
-  @SuppressWarnings("unchecked")
-  public Function<ChannelBuffer, Object> decoder(Class<Object> clazz) {
-    return (Function<ChannelBuffer, Object>) DECODER;
+  @Override
+  public Function<ByteBuf, Object> decoder(Class<Object> clazz) {
+    return DECODER;
   }
 
-  private static Function<Object, ChannelBuffer> ENCODER = new Function<Object, ChannelBuffer>() {
-    public ChannelBuffer apply(Object object) {
+  private static Function<Object, ByteBuf> ENCODER = new Function<Object, ByteBuf>() {
+    public ByteBuf apply(Object object) {
       try {
-        ChannelBuffer serialForm = ChannelBuffers.dynamicBuffer();
-        ObjectOutputStream oos = new ObjectOutputStream(new ChannelBufferOutputStream(serialForm));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(object);
-        return serialForm;
+        return Unpooled.wrappedBuffer(baos.toByteArray());
       } catch (Exception e) {
         throw new SerializationException(e);
       }
     }
   };
 
-  private static Function<ChannelBuffer, Object> DECODER = new Function<ChannelBuffer, Object>() {
-    public Object apply(ChannelBuffer serialForm) {
+  private static Function<ByteBuf, Object> DECODER = new Function<ByteBuf, Object>() {
+    public Object apply(ByteBuf serialForm) {
       try {
         // Todo: Use JBoss Marshalling/Serialization?
-        ObjectInputStream ois = new FastObjectInputStream(new ChannelBufferInputStream(serialForm));
+        ByteArrayInputStream bais = new ByteArrayInputStream(serialForm.copy().array());
+        ObjectInputStream ois = new FastObjectInputStream(bais);
         return ois.readObject();
       } catch (Exception e) {
         throw new SerializationException(e);

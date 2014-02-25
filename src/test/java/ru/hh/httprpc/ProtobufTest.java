@@ -3,13 +3,12 @@ package ru.hh.httprpc;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jboss.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandler;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import ru.hh.httprpc.serialization.ProtobufSerializer;
 import ru.hh.httprpc.util.netty.RoutingHandler;
-import ru.hh.httprpc.InetSocketAddress;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -51,7 +50,7 @@ public class ProtobufTest {
     Messages.Reply local = serverMethod.call(null, argument).get();
     
     ClientMethod<Messages.Request, Messages.Reply> clientMethod = client.createMethod(signature);
-    Messages.Reply remote = clientMethod.call(server.getLocalAddress(), new Envelope(10, "asdf"), argument).get();
+    Messages.Reply remote = clientMethod.call(server.getLocalAddress(), new Envelope(100, "asdf"), argument).get();
     
     assertEquals(remote, local);
   }

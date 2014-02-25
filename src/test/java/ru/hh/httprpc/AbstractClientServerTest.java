@@ -1,7 +1,7 @@
 package ru.hh.httprpc;
 
 import com.google.common.collect.ImmutableMap;
-import org.jboss.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandler;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import ru.hh.httprpc.serialization.JavaSerializer;

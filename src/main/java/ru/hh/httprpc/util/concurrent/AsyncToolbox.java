@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.Timer;
+import io.netty.util.Timeout;
+import io.netty.util.Timer;
 
 import java.util.ArrayList;
 import java.util.Collection;
