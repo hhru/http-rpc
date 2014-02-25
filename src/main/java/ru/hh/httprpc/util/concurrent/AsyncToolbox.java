@@ -3,21 +3,19 @@ package ru.hh.httprpc.util.concurrent;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import static com.google.common.collect.Lists.newArrayList;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.Timer;
-
+import io.netty.util.Timeout;
+import io.netty.util.Timer;
 import java.util.ArrayList;
 import java.util.Collection;
+import static java.util.Collections.synchronizedList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.google.common.collect.Lists.newArrayList;
-import static java.util.Collections.synchronizedList;
 import static ru.hh.httprpc.util.netty.Timers.asTimerTask;
 
 // See history of this class, with upping guava version some functionality had to go. This might not work as intended.
@@ -60,11 +58,12 @@ public class AsyncToolbox {
      * This method breaks a contract of Future. Instead of actually cancelling it,
      * it stops further computations and marks future as complete, yielding results
      * aquired by that moment.
+     *
      * @param mayInterruptIfRunning ignored
      * @return always true
      */
     public boolean cancel(boolean mayInterruptIfRunning) {
-      for(Future<O> future : futures)
+      for (Future<O> future : futures)
         future.cancel(true);
       return true;
     }
@@ -90,7 +89,7 @@ public class AsyncToolbox {
 
     private void callNext(final Iterator<I> targets) {
       // This (and another sync in done()) both protects the list and ensures no new invocations after finishing with Future for whatever reason
-      synchronized(futures) {
+      synchronized (futures) {
         if (!isDone() && targets.hasNext()) {
           I target = targets.next();
 

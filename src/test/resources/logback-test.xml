@@ -5,9 +5,9 @@
     </encoder>
     <target>System.err</target>
   </appender>
-  
+
   <logger name="ru.hh.httprpc" level="INFO"/>
-  
+
   <root level="INFO">
     <appender-ref ref="STDOUT"/>
   </root>

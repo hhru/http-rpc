@@ -73,7 +73,7 @@ public class EnvelopeController implements RpcController {
   public <T> void listenToFuture(ListenableFuture<T> future, final RpcCallback<T> done) {
     new FutureListener<T>(future) {
       protected void success(T result) {
-         done.run(result);
+        done.run(result);
       }
 
       protected void exception(Throwable t) {

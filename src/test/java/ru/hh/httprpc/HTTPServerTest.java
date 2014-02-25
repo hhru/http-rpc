@@ -2,13 +2,13 @@ package ru.hh.httprpc;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandler;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
@@ -28,13 +28,13 @@ public class HTTPServerTest {
     TcpOptions options = TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0));
     ChannelHandler handler = new HttpHandler() {
       @Override
-      protected void requestReceived(final Channel channel, HttpRequest request, Http.UrlDecoder url) throws Exception {
+      protected void requestReceived(final Channel channel, FullHttpRequest request, Http.UrlDecoder url) throws Exception {
         new Thread() {
           @Override
           public void run() {
             try {
-              final JavaSerializer javaSerializer = new JavaSerializer();
-              final ChannelBuffer buffer = javaSerializer.encoder((Class) Long.class).apply(RESULT);
+              JavaSerializer javaSerializer = new JavaSerializer();
+              ByteBuf buffer = javaSerializer.encoder((Class) Long.class).apply(RESULT);
               // processing/sleeping more than timeout, possible in "processing" state. before start sending results
               TimeUnit.MILLISECONDS.sleep(TEST_WRITE_TIMEOUT * 2);
               Http.response(HttpResponseStatus.OK).containing(javaSerializer.getContentType(), buffer).sendTo(channel);

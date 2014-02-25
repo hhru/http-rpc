@@ -9,11 +9,11 @@ public class SerializerTest {
   @DataProvider(name = "serializers")
   public Object[][] serializers() {
     return new Object[][] {
-      {new JavaSerializer(), new Object[] {"hello"}},
-      {new ProtobufSerializer(), new Object[] {Messages.Request.newBuilder().setRequest("hello").build()}}
+      {new JavaSerializer(), new Object[]{"hello"}},
+      {new ProtobufSerializer(), new Object[]{Messages.Request.newBuilder().setRequest("hello").build()}}
     };
   }
-  
+
   @Test(dataProvider = "serializers")
   public void fromTo(Serializer serializer, Object[] objects) throws SerializationException {
     for (Object object : objects) {

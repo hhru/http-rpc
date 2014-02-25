@@ -3,17 +3,15 @@ package ru.hh.httprpc.spring.httpinvoker;
 import com.google.common.base.Function;
 import com.google.common.collect.MapMaker;
 import com.google.common.util.concurrent.Futures;
+import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import com.google.common.util.concurrent.ListenableFuture;
+import java.util.concurrent.ConcurrentMap;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationResult;
 import ru.hh.httprpc.Envelope;
 import ru.hh.httprpc.RPC;
 import ru.hh.httprpc.ServerMethod;
 import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
-
-import java.util.concurrent.ConcurrentMap;
-
-import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 
 public class SpringHTTPIndapter implements ServerMethod<RemoteInvocation, RemoteInvocationResult> {
   public static RPC<RemoteInvocation, RemoteInvocationResult> signature(String path) {

@@ -1,6 +1,6 @@
 package ru.hh.httprpc;
 
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 public class RPCMethodException extends RuntimeException {
 

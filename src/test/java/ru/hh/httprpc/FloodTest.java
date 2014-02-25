@@ -4,6 +4,7 @@ import com.google.common.base.Throwables;
 import static com.google.common.collect.Lists.newArrayList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import static io.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -12,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
@@ -38,7 +38,7 @@ public class FloodTest extends AbstractClientServerTest {
     // Now send a fast task and check it ran successfully
     assertEquals(clientMethod.call(address, new Envelope(), 1L).get(1, SECONDS), new Long(1));
     assertTrue(serverMethod.completedWithin(1, SECONDS));
-    
+
     // Cancel long ones
     for (Future longFuture : longFutures) {
       longFuture.cancel(true);
@@ -83,7 +83,7 @@ public class FloodTest extends AbstractClientServerTest {
       Throwable cause = e.getCause();
       assertEquals(cause.getClass(), BadResponseException.class);
       BadResponseException response = (BadResponseException) cause;
-      assertTrue(response.getMessage().contains(SERVICE_UNAVAILABLE.getReasonPhrase()));
+      assertTrue(response.getMessage().contains(SERVICE_UNAVAILABLE.reasonPhrase()));
     }
 
     for (Future longFuture : longFutures)

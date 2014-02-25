@@ -5,26 +5,27 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.MapMaker;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.lang.String.format;
+import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
+import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
 import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.Http;
 import ru.hh.httprpc.util.netty.HttpHandler;
-
-import java.util.concurrent.ConcurrentMap;
-
-import static java.lang.String.format;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
-import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
-import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
 
 @Sharable
 public class RPCHandler extends HttpHandler {
@@ -46,7 +47,8 @@ public class RPCHandler extends HttpHandler {
     );
   }
 
-  protected void requestReceived(final Channel channel, HttpRequest request, Http.UrlDecoder url) throws Exception {
+  @Override
+  protected void requestReceived(final Channel channel, FullHttpRequest request, Http.UrlDecoder url) throws Exception {
     final String path = url.path();
     try {
       final ServerMethodDescriptor<?, ?> descriptor = methods.get(path);
@@ -63,16 +65,16 @@ public class RPCHandler extends HttpHandler {
         return;
       }
 
-      final ListenableFuture<ChannelBuffer> methodFuture = descriptor.call(
+      final ListenableFuture<ByteBuf> methodFuture = descriptor.call(
           new Envelope(
               url.optionalSingleLong(TIMEOUT, Envelope.DEFAULT_TIMEOUT),
               url.optionalSingleString(REQUEST_ID, Envelope.DEFAULT_REQUESTID)
           ),
-          request.getContent()
+          request.content()
       );
 
-      new FutureListener<ChannelBuffer>(methodFuture) {
-        protected void success(ChannelBuffer result) {
+      new FutureListener<ByteBuf>(methodFuture) {
+        protected void success(ByteBuf result) {
           Http.response(OK).
               containing(serializer.getContentType(), result).
               sendAndClose(channel);
@@ -84,10 +86,10 @@ public class RPCHandler extends HttpHandler {
       };
 
       if (!prohibitCancellation) {
-        channel.getCloseFuture().addListener(new ChannelFutureListener() {
+        channel.closeFuture().addListener(new ChannelFutureListener() {
           public void operationComplete(ChannelFuture future) throws Exception {
             if (methodFuture.cancel(true))
-              logger.debug("'{}' method call was cancelled by client ({})", path, channel.getRemoteAddress());
+              logger.debug("'{}' method call was cancelled by client ({})", path, channel.remoteAddress());
           }
         });
       }
@@ -116,16 +118,16 @@ public class RPCHandler extends HttpHandler {
 
   private static class ServerMethodDescriptor<I, O> {
     final public ServerMethod<I, O> method;
-    Function<ChannelBuffer, I> decoder;
-    Function<O, ChannelBuffer> encoder;
+    Function<ByteBuf, I> decoder;
+    Function<O, ByteBuf> encoder;
 
-    public ServerMethodDescriptor(ServerMethod<I, O> method, Function<ChannelBuffer, I> decoder, Function<O, ChannelBuffer> encoder) {
+    public ServerMethodDescriptor(ServerMethod<I, O> method, Function<ByteBuf, I> decoder, Function<O, ByteBuf> encoder) {
       this.method = method;
       this.decoder = decoder;
       this.encoder = encoder;
     }
 
-    public ListenableFuture<ChannelBuffer> call(Envelope envelope, ChannelBuffer input) {
+    public ListenableFuture<ByteBuf> call(Envelope envelope, ByteBuf input) {
       return Futures.transform(method.call(envelope, decoder.apply(input)), encoder);
     }
   }

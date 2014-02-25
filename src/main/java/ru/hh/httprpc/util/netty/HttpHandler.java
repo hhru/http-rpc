@@ -1,19 +1,18 @@
 package ru.hh.httprpc.util.netty;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.handler.codec.http.HttpRequest;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
 
-public abstract class HttpHandler extends SimpleChannelUpstreamHandler {
-  public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-    Channel channel = e.getChannel();
-    HttpRequest request = (HttpRequest) e.getMessage();
+public abstract class HttpHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+  @Override
+  public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+    Channel channel = ctx.channel();
     Http.UrlDecoder url = new Http.UrlDecoder(request.getUri());
 
     requestReceived(channel, request, url);
   }
 
-  protected abstract void requestReceived(Channel channel, HttpRequest request, Http.UrlDecoder url) throws Exception;
+  protected abstract void requestReceived(Channel channel, FullHttpRequest request, Http.UrlDecoder url) throws Exception;
 }
