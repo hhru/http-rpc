@@ -6,6 +6,7 @@ import com.google.protobuf.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.ByteArrayInputStream;
+import static ru.hh.httprpc.util.netty.ByteBufUtil.bufferBytes;
 
 public class ProtobufSerializer implements Serializer<Message,Message> {
   @Override
@@ -39,9 +40,9 @@ public class ProtobufSerializer implements Serializer<Message,Message> {
       public Message apply(ByteBuf serialForm) {
         try {
           if (serialForm.hasArray())
-            return prototype.newBuilderForType().mergeFrom(serialForm.copy().array(), serialForm.arrayOffset(), serialForm.readableBytes()).build();
+            return prototype.newBuilderForType().mergeFrom(bufferBytes(serialForm), serialForm.arrayOffset(), serialForm.readableBytes()).build();
           else
-            return prototype.newBuilderForType().mergeFrom(new ByteArrayInputStream(serialForm.copy().array())).build();
+            return prototype.newBuilderForType().mergeFrom(new ByteArrayInputStream(bufferBytes(serialForm))).build();
         } catch (Exception e) {
           throw new SerializationException(e);
         }

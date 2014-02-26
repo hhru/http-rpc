@@ -9,6 +9,7 @@ import ru.hh.httprpc.util.FastObjectInputStream;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import static ru.hh.httprpc.util.netty.ByteBufUtil.bufferBytes;
 
 public class JavaSerializer implements Serializer<Object, Object> {
   @Override
@@ -43,7 +44,7 @@ public class JavaSerializer implements Serializer<Object, Object> {
     public Object apply(ByteBuf serialForm) {
       try {
         // Todo: Use JBoss Marshalling/Serialization?
-        ByteArrayInputStream bais = new ByteArrayInputStream(serialForm.copy().array());
+        ByteArrayInputStream bais = new ByteArrayInputStream(bufferBytes(serialForm));
         ObjectInputStream ois = new FastObjectInputStream(bais);
         return ois.readObject();
       } catch (Exception e) {
