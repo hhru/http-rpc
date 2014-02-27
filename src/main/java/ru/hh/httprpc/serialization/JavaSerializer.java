@@ -5,10 +5,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import ru.hh.httprpc.util.FastObjectInputStream;
-
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import ru.hh.httprpc.util.FastObjectInputStream;
 import static ru.hh.httprpc.util.netty.ByteBufUtil.bufferBytes;
 
 public class JavaSerializer implements Serializer<Object, Object> {

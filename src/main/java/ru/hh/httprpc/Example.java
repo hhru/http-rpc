@@ -8,6 +8,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
+import static java.lang.String.format;
+import static java.lang.System.out;
+import static java.util.Arrays.asList;
+import java.util.Collection;
+import java.util.List;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import ru.hh.httprpc.balancer.Balancer;
 import ru.hh.httprpc.balancer.LeastConnectionsBalancer;
 import ru.hh.httprpc.serialization.JavaSerializer;
@@ -16,15 +23,6 @@ import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.RoutingHandler;
 import ru.hh.httprpc.util.netty.Timers;
-
-import java.util.Collection;
-import java.util.List;
-
-import static java.lang.String.format;
-import static java.lang.System.out;
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 interface SampleAPI {
   RPC<String, Integer> COUNT_MATCHES = RPC.signature("/countMatches", String.class, Integer.class);
@@ -40,7 +38,7 @@ public class Example {
       }
     });
     RoutingHandler baseRouter = new RoutingHandler(
-      ImmutableMap.<String, ChannelHandler>builder().put("/base", baseHandler).build());
+        ImmutableMap.<String, ChannelHandler>builder().put("/base", baseHandler).build());
     HTTPServer baseServer = new HTTPServer(TcpOptions.create(), 2, baseRouter);
 
     RPCClient metaClient = new RPCClient(TcpOptions.create(), "", 2, new JavaSerializer());
@@ -83,8 +81,8 @@ public class Example {
       }
     });
     RoutingHandler metaRouter = new RoutingHandler(
-      ImmutableMap.<String, ChannelHandler>builder().put("/meta", metaHandler).build());
-    
+        ImmutableMap.<String, ChannelHandler>builder().put("/meta", metaHandler).build());
+
     HTTPServer metaServer = new HTTPServer(TcpOptions.create(), 2, metaRouter);
 
     // ?????

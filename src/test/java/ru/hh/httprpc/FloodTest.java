@@ -17,7 +17,7 @@ public class FloodTest extends AbstractClientServerTest {
     serverHandler.register(LONG2LONG_METHOD, serverMethod);
 
     ClientMethod<Long, Long> clientMethod = client.createMethod(LONG2LONG_METHOD);
-    
+
     List<Future> longFutures = newArrayList();
     // flood server's ioThreads with long tasks (if it processes them in ioThreads) 
     for (int i = 0; i < ioThreads + 1; i++)
@@ -26,7 +26,7 @@ public class FloodTest extends AbstractClientServerTest {
     // Now send a fast task and check it ran successfully
     assertEquals(clientMethod.call(address, new Envelope(), 1L).get(1, SECONDS), new Long(1));
     assertTrue(serverMethod.completedWithin(1, SECONDS));
-    
+
     // Cancel long ones
     for (Future longFuture : longFutures)
       longFuture.cancel(true);

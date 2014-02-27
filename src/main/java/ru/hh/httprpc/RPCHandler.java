@@ -12,19 +12,20 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.lang.String.format;
+import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
+import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
 import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.concurrent.FutureListener;
 import ru.hh.httprpc.util.netty.Http;
 import ru.hh.httprpc.util.netty.HttpHandler;
-
-import java.util.concurrent.ConcurrentMap;
-
-import static java.lang.String.format;
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static ru.hh.httprpc.HttpRpcNames.REQUEST_ID;
-import static ru.hh.httprpc.HttpRpcNames.TIMEOUT;
 
 @Sharable
 public class RPCHandler extends HttpHandler {
@@ -56,8 +57,8 @@ public class RPCHandler extends HttpHandler {
         Http.response(NOT_FOUND).
             containing(format(
                 "method '%s' not found.\n" +
-                "available methods:\n" +
-                "%s\n",
+                    "available methods:\n" +
+                    "%s\n",
                 path,
                 methods.isEmpty() ? "<none>" : Joiner.on("\n").join(methods.keySet())
             )).sendAndClose(channel);

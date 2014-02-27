@@ -8,7 +8,7 @@ import io.netty.buffer.Unpooled;
 import java.io.ByteArrayInputStream;
 import static ru.hh.httprpc.util.netty.ByteBufUtil.bufferBytes;
 
-public class ProtobufSerializer implements Serializer<Message,Message> {
+public class ProtobufSerializer implements Serializer<Message, Message> {
   @Override
   public String getContentType() {
     return "application/x-protobuf";

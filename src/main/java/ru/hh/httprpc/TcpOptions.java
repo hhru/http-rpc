@@ -22,15 +22,18 @@ public class TcpOptions<T extends TcpOptions> {
     public ChildOptions child(ChildOptions child) {
       throw new UnsupportedOperationException();
     }
+
     @Override
     public void initializeBootstrap(AbstractBootstrap bootstrap) {
       throw new UnsupportedOperationException();
     }
+
     @Override
     public void initializeBootstrap(ServerBootstrap bootstrap) {
       throw new UnsupportedOperationException();
     }
   }
+
   protected Map<ChannelOption, Object> options = new HashMap<ChannelOption, Object>();
   private InetSocketAddress localAddress;
   private ChildOptions child;
@@ -47,7 +50,7 @@ public class TcpOptions<T extends TcpOptions> {
     this.localAddress = localAddress;
     return self;
   }
-  
+
   public InetSocketAddress localAddress() {
     return localAddress;
   }
@@ -56,37 +59,37 @@ public class TcpOptions<T extends TcpOptions> {
     options.put(ChannelOption.SO_BACKLOG, backlog);
     return self;
   }
-  
+
   public T connectTimeoutMillis(int connectTimeoutMillis) {
     options.put(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis);
     return self;
   }
-  
+
   public T keepAlive(boolean keepAlive) {
     options.put(ChannelOption.SO_KEEPALIVE, keepAlive);
     return self;
   }
-  
+
   public T reuseAddress(boolean reuseAddress) {
     options.put(ChannelOption.SO_REUSEADDR, reuseAddress);
     return self;
   }
-  
+
   public T soLinger(int soLinger) {
     options.put(ChannelOption.SO_LINGER, soLinger);
     return self;
   }
-  
+
   public T tcpNoDelay(boolean tcpNoDelay) {
     options.put(ChannelOption.TCP_NODELAY, tcpNoDelay);
     return self;
   }
-  
+
   public T receiveBufferSize(int receiveBufferSize) {
     options.put(ChannelOption.SO_RCVBUF, receiveBufferSize);
     return self;
   }
-  
+
   public T sendBufferSize(int sendBufferSize) {
     options.put(ChannelOption.SO_SNDBUF, sendBufferSize);
     return self;

@@ -14,7 +14,7 @@ public abstract class RunnableOnce implements Runnable {
   }
 
   public void run() {
-    if(hasRun.compareAndSet(false, true))
+    if (hasRun.compareAndSet(false, true))
       doRun();
   }
 

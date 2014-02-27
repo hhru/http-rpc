@@ -5,31 +5,29 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.util.concurrent.ImmediateEventExecutor;
-import java.nio.channels.ClosedChannelException;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.ImmediateEventExecutor;
+import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.httprpc.serialization.Serializer;
@@ -52,17 +50,17 @@ public class RPCClient extends AbstractService {
     workerGroup = new NioEventLoopGroup(ioThreads);
     allChannels = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
     bootstrap = new Bootstrap()
-    .group(bossGroup)
-    .localAddress(options.localAddress())
-    .channel(NioSocketChannel.class)
-    .handler(new ChannelInitializer<NioSocketChannel>() {
-      @Override
-      protected void initChannel(NioSocketChannel ch) throws Exception {
-        ch.pipeline()
-            .addLast(new HttpClientCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE))
-            .addLast("httpAggregator", new HttpObjectAggregator(Integer.MAX_VALUE));
-      }
-    });
+        .group(bossGroup)
+        .localAddress(options.localAddress())
+        .channel(NioSocketChannel.class)
+        .handler(new ChannelInitializer<NioSocketChannel>() {
+          @Override
+          protected void initChannel(NioSocketChannel ch) throws Exception {
+            ch.pipeline()
+                .addLast(new HttpClientCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE))
+                .addLast("httpAggregator", new HttpObjectAggregator(Integer.MAX_VALUE));
+          }
+        });
     options.initializeBootstrap(bootstrap);
     startAsync().awaitRunning();
   }
@@ -139,14 +137,14 @@ public class RPCClient extends AbstractService {
       });
       return clientFuture;
     }
-  
+
     private class ClientHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
       private final ClientFuture<O> future;
-  
+
       public ClientHandler(ClientFuture<O> future) {
         this.future = future;
       }
-  
+
       @Override
       protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse response) throws Exception {
         ByteBuf content = response.content();
@@ -160,7 +158,7 @@ public class RPCClient extends AbstractService {
           }
         } else {
           StringBuilder message = new StringBuilder("server at ").append(ctx.channel().remoteAddress()).append(fullPath)
-            .append(" returned: ").append(response.getStatus().toString());
+              .append(" returned: ").append(response.getStatus().toString());
           String contentType = response.headers().get(HttpHeaders.Names.CONTENT_TYPE);
           String details = null;
           if (contentType != null && contentType.contains("text/plain")) {
@@ -171,7 +169,7 @@ public class RPCClient extends AbstractService {
           future.setException(new BadResponseException(message.toString(), details));
         }
       }
-    
+
       @Override
       public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (future.isCancelled() && cause instanceof ClosedChannelException) {
@@ -180,8 +178,8 @@ public class RPCClient extends AbstractService {
           logger.debug("client got exception, closing channel", cause);
           if (!future.setException(cause)) {
             logger.warn(
-              String.format("failed to set exception for future, cancelled: %b, done: %b", future.isCancelled(), future.isDone()),
-              cause);
+                String.format("failed to set exception for future, cancelled: %b, done: %b", future.isCancelled(), future.isDone()),
+                cause);
           }
           ctx.close();
         }

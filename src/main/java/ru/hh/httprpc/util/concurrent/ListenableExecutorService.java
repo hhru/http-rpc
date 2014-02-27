@@ -1,7 +1,6 @@
 package ru.hh.httprpc.util.concurrent;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 

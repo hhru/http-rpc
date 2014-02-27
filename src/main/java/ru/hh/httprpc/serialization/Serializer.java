@@ -7,5 +7,6 @@ public interface Serializer<I, O> {
   String getContentType();
 
   Function<O, ByteBuf> encoder(Class<O> clazz);
+
   Function<ByteBuf, I> decoder(Class<I> clazz);
 }

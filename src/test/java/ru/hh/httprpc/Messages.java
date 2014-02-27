@@ -4,109 +4,129 @@
 package ru.hh.httprpc;
 
 public final class Messages {
-  private Messages() {}
+  private Messages() {
+  }
+
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
+
   public static final class Request extends
       com.google.protobuf.GeneratedMessage {
     // Use Request.newBuilder() to construct.
     private Request() {
       initFields();
     }
-    private Request(boolean noInit) {}
-    
+
+    private Request(boolean noInit) {
+    }
+
     private static final Request defaultInstance;
+
     public static Request getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public Request getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
     public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
+    getDescriptor() {
       return ru.hh.httprpc.Messages.internal_static_hh_search_httprpc_Request_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
+    internalGetFieldAccessorTable() {
       return ru.hh.httprpc.Messages.internal_static_hh_search_httprpc_Request_fieldAccessorTable;
     }
-    
+
     // required string request = 1;
     public static final int REQUEST_FIELD_NUMBER = 1;
     private boolean hasRequest;
     private java.lang.String request_ = "";
-    public boolean hasRequest() { return hasRequest; }
-    public java.lang.String getRequest() { return request_; }
-    
+
+    public boolean hasRequest() {
+      return hasRequest;
+    }
+
+    public java.lang.String getRequest() {
+      return request_;
+    }
+
     private void initFields() {
     }
+
     public final boolean isInitialized() {
       if (!hasRequest) return false;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
+        throws java.io.IOException {
       getSerializedSize();
       if (hasRequest()) {
         output.writeString(1, getRequest());
       }
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
+
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
       if (hasRequest()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getRequest());
+            .computeStringSize(1, getRequest());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
     public static ru.hh.httprpc.Messages.Request parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Request parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+          .buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Request parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Request parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+          .buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Request parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Request parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+          .buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Request parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       Builder builder = newBuilder();
@@ -116,6 +136,7 @@ public final class Messages {
         return null;
       }
     }
+
     public static ru.hh.httprpc.Messages.Request parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -127,103 +148,116 @@ public final class Messages {
         return null;
       }
     }
+
     public static ru.hh.httprpc.Messages.Request parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Request parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+          .buildParsed();
     }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
+
+    public static Builder newBuilder() {
+      return Builder.create();
+    }
+
+    public Builder newBuilderForType() {
+      return newBuilder();
+    }
+
     public static Builder newBuilder(ru.hh.httprpc.Messages.Request prototype) {
       return newBuilder().mergeFrom(prototype);
     }
-    public Builder toBuilder() { return newBuilder(this); }
-    
+
+    public Builder toBuilder() {
+      return newBuilder(this);
+    }
+
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> {
       private ru.hh.httprpc.Messages.Request result;
-      
+
       // Construct using ru.hh.httprpc.Messages.Request.newBuilder()
-      private Builder() {}
-      
+      private Builder() {
+      }
+
       private static Builder create() {
         Builder builder = new Builder();
         builder.result = new ru.hh.httprpc.Messages.Request();
         return builder;
       }
-      
+
       protected ru.hh.httprpc.Messages.Request internalGetResult() {
         return result;
       }
-      
+
       public Builder clear() {
         if (result == null) {
           throw new IllegalStateException(
-            "Cannot call clear() after build().");
+              "Cannot call clear() after build().");
         }
         result = new ru.hh.httprpc.Messages.Request();
         return this;
       }
-      
+
       public Builder clone() {
         return create().mergeFrom(result);
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
+      getDescriptorForType() {
         return ru.hh.httprpc.Messages.Request.getDescriptor();
       }
-      
+
       public ru.hh.httprpc.Messages.Request getDefaultInstanceForType() {
         return ru.hh.httprpc.Messages.Request.getDefaultInstance();
       }
-      
+
       public boolean isInitialized() {
         return result.isInitialized();
       }
+
       public ru.hh.httprpc.Messages.Request build() {
         if (result != null && !isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return buildPartial();
       }
-      
+
       private ru.hh.httprpc.Messages.Request buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
         if (!isInitialized()) {
           throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
+              result).asInvalidProtocolBufferException();
         }
         return buildPartial();
       }
-      
+
       public ru.hh.httprpc.Messages.Request buildPartial() {
         if (result == null) {
           throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+              "build() has already been called on this Builder.");
         }
         ru.hh.httprpc.Messages.Request returnMe = result;
         result = null;
         return returnMe;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof ru.hh.httprpc.Messages.Request) {
-          return mergeFrom((ru.hh.httprpc.Messages.Request)other);
+          return mergeFrom((ru.hh.httprpc.Messages.Request) other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
-      
+
       public Builder mergeFrom(ru.hh.httprpc.Messages.Request other) {
         if (other == ru.hh.httprpc.Messages.Request.getDefaultInstance()) return this;
         if (other.hasRequest()) {
@@ -232,14 +266,14 @@ public final class Messages {
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
         com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
+            com.google.protobuf.UnknownFieldSet.newBuilder(
+                this.getUnknownFields());
         while (true) {
           int tag = input.readTag();
           switch (tag) {
@@ -248,7 +282,7 @@ public final class Messages {
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+                  extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
                 return this;
               }
@@ -261,140 +295,160 @@ public final class Messages {
           }
         }
       }
-      
-      
+
+
       // required string request = 1;
       public boolean hasRequest() {
         return result.hasRequest();
       }
+
       public java.lang.String getRequest() {
         return result.getRequest();
       }
+
       public Builder setRequest(java.lang.String value) {
         if (value == null) {
-    throw new NullPointerException();
-  }
-  result.hasRequest = true;
+          throw new NullPointerException();
+        }
+        result.hasRequest = true;
         result.request_ = value;
         return this;
       }
+
       public Builder clearRequest() {
         result.hasRequest = false;
         result.request_ = getDefaultInstance().getRequest();
         return this;
       }
-      
+
       // @@protoc_insertion_point(builder_scope:hh.search.httprpc.Request)
     }
-    
+
     static {
       defaultInstance = new Request(true);
       ru.hh.httprpc.Messages.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:hh.search.httprpc.Request)
   }
-  
+
   public static final class Reply extends
       com.google.protobuf.GeneratedMessage {
     // Use Reply.newBuilder() to construct.
     private Reply() {
       initFields();
     }
-    private Reply(boolean noInit) {}
-    
+
+    private Reply(boolean noInit) {
+    }
+
     private static final Reply defaultInstance;
+
     public static Reply getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public Reply getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
     public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
+    getDescriptor() {
       return ru.hh.httprpc.Messages.internal_static_hh_search_httprpc_Reply_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
+    internalGetFieldAccessorTable() {
       return ru.hh.httprpc.Messages.internal_static_hh_search_httprpc_Reply_fieldAccessorTable;
     }
-    
+
     // required string reply = 1;
     public static final int REPLY_FIELD_NUMBER = 1;
     private boolean hasReply;
     private java.lang.String reply_ = "";
-    public boolean hasReply() { return hasReply; }
-    public java.lang.String getReply() { return reply_; }
-    
+
+    public boolean hasReply() {
+      return hasReply;
+    }
+
+    public java.lang.String getReply() {
+      return reply_;
+    }
+
     private void initFields() {
     }
+
     public final boolean isInitialized() {
       if (!hasReply) return false;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
+        throws java.io.IOException {
       getSerializedSize();
       if (hasReply()) {
         output.writeString(1, getReply());
       }
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
+
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
       if (hasReply()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getReply());
+            .computeStringSize(1, getReply());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
     public static ru.hh.httprpc.Messages.Reply parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Reply parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+          .buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Reply parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Reply parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+          .buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Reply parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Reply parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+          .buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Reply parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       Builder builder = newBuilder();
@@ -404,6 +458,7 @@ public final class Messages {
         return null;
       }
     }
+
     public static ru.hh.httprpc.Messages.Reply parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -415,103 +470,116 @@ public final class Messages {
         return null;
       }
     }
+
     public static ru.hh.httprpc.Messages.Reply parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
+
     public static ru.hh.httprpc.Messages.Reply parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+          .buildParsed();
     }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
+
+    public static Builder newBuilder() {
+      return Builder.create();
+    }
+
+    public Builder newBuilderForType() {
+      return newBuilder();
+    }
+
     public static Builder newBuilder(ru.hh.httprpc.Messages.Reply prototype) {
       return newBuilder().mergeFrom(prototype);
     }
-    public Builder toBuilder() { return newBuilder(this); }
-    
+
+    public Builder toBuilder() {
+      return newBuilder(this);
+    }
+
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> {
       private ru.hh.httprpc.Messages.Reply result;
-      
+
       // Construct using ru.hh.httprpc.Messages.Reply.newBuilder()
-      private Builder() {}
-      
+      private Builder() {
+      }
+
       private static Builder create() {
         Builder builder = new Builder();
         builder.result = new ru.hh.httprpc.Messages.Reply();
         return builder;
       }
-      
+
       protected ru.hh.httprpc.Messages.Reply internalGetResult() {
         return result;
       }
-      
+
       public Builder clear() {
         if (result == null) {
           throw new IllegalStateException(
-            "Cannot call clear() after build().");
+              "Cannot call clear() after build().");
         }
         result = new ru.hh.httprpc.Messages.Reply();
         return this;
       }
-      
+
       public Builder clone() {
         return create().mergeFrom(result);
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
+      getDescriptorForType() {
         return ru.hh.httprpc.Messages.Reply.getDescriptor();
       }
-      
+
       public ru.hh.httprpc.Messages.Reply getDefaultInstanceForType() {
         return ru.hh.httprpc.Messages.Reply.getDefaultInstance();
       }
-      
+
       public boolean isInitialized() {
         return result.isInitialized();
       }
+
       public ru.hh.httprpc.Messages.Reply build() {
         if (result != null && !isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return buildPartial();
       }
-      
+
       private ru.hh.httprpc.Messages.Reply buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
         if (!isInitialized()) {
           throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
+              result).asInvalidProtocolBufferException();
         }
         return buildPartial();
       }
-      
+
       public ru.hh.httprpc.Messages.Reply buildPartial() {
         if (result == null) {
           throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+              "build() has already been called on this Builder.");
         }
         ru.hh.httprpc.Messages.Reply returnMe = result;
         result = null;
         return returnMe;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof ru.hh.httprpc.Messages.Reply) {
-          return mergeFrom((ru.hh.httprpc.Messages.Reply)other);
+          return mergeFrom((ru.hh.httprpc.Messages.Reply) other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
-      
+
       public Builder mergeFrom(ru.hh.httprpc.Messages.Reply other) {
         if (other == ru.hh.httprpc.Messages.Reply.getDefaultInstance()) return this;
         if (other.hasReply()) {
@@ -520,14 +588,14 @@ public final class Messages {
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
         com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
+            com.google.protobuf.UnknownFieldSet.newBuilder(
+                this.getUnknownFields());
         while (true) {
           int tag = input.readTag();
           switch (tag) {
@@ -536,7 +604,7 @@ public final class Messages {
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+                  extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
                 return this;
               }
@@ -549,96 +617,102 @@ public final class Messages {
           }
         }
       }
-      
-      
+
+
       // required string reply = 1;
       public boolean hasReply() {
         return result.hasReply();
       }
+
       public java.lang.String getReply() {
         return result.getReply();
       }
+
       public Builder setReply(java.lang.String value) {
         if (value == null) {
-    throw new NullPointerException();
-  }
-  result.hasReply = true;
+          throw new NullPointerException();
+        }
+        result.hasReply = true;
         result.reply_ = value;
         return this;
       }
+
       public Builder clearReply() {
         result.hasReply = false;
         result.reply_ = getDefaultInstance().getReply();
         return this;
       }
-      
+
       // @@protoc_insertion_point(builder_scope:hh.search.httprpc.Reply)
     }
-    
+
     static {
       defaultInstance = new Reply(true);
       ru.hh.httprpc.Messages.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:hh.search.httprpc.Reply)
   }
-  
+
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_hh_search_httprpc_Request_descriptor;
+      internal_static_hh_search_httprpc_Request_descriptor;
   private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+  com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_hh_search_httprpc_Request_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_hh_search_httprpc_Reply_descriptor;
+      internal_static_hh_search_httprpc_Reply_descriptor;
   private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+  com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_hh_search_httprpc_Reply_fieldAccessorTable;
-  
+
   public static com.google.protobuf.Descriptors.FileDescriptor
-      getDescriptor() {
+  getDescriptor() {
     return descriptor;
   }
+
   private static com.google.protobuf.Descriptors.FileDescriptor
       descriptor;
+
   static {
     java.lang.String[] descriptorData = {
-      "\n src/test/protobuf/messages.proto\022\021hh.s" +
-      "earch.httprpc\"\032\n\007Request\022\017\n\007request\030\001 \002(" +
-      "\t\"\026\n\005Reply\022\r\n\005reply\030\001 \002(\tB\017\n\rru.hh.httpr" +
-      "pc"
+        "\n src/test/protobuf/messages.proto\022\021hh.s" +
+            "earch.httprpc\"\032\n\007Request\022\017\n\007request\030\001 \002(" +
+            "\t\"\026\n\005Reply\022\r\n\005reply\030\001 \002(\tB\017\n\rru.hh.httpr" +
+            "pc"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-      new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
-        public com.google.protobuf.ExtensionRegistry assignDescriptors(
-            com.google.protobuf.Descriptors.FileDescriptor root) {
-          descriptor = root;
-          internal_static_hh_search_httprpc_Request_descriptor =
-            getDescriptor().getMessageTypes().get(0);
-          internal_static_hh_search_httprpc_Request_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_hh_search_httprpc_Request_descriptor,
-              new java.lang.String[] { "Request", },
-              ru.hh.httprpc.Messages.Request.class,
-              ru.hh.httprpc.Messages.Request.Builder.class);
-          internal_static_hh_search_httprpc_Reply_descriptor =
-            getDescriptor().getMessageTypes().get(1);
-          internal_static_hh_search_httprpc_Reply_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_hh_search_httprpc_Reply_descriptor,
-              new java.lang.String[] { "Reply", },
-              ru.hh.httprpc.Messages.Reply.class,
-              ru.hh.httprpc.Messages.Reply.Builder.class);
-          return null;
-        }
-      };
+        new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
+          public com.google.protobuf.ExtensionRegistry assignDescriptors(
+              com.google.protobuf.Descriptors.FileDescriptor root) {
+            descriptor = root;
+            internal_static_hh_search_httprpc_Request_descriptor =
+                getDescriptor().getMessageTypes().get(0);
+            internal_static_hh_search_httprpc_Request_fieldAccessorTable = new
+                com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+                internal_static_hh_search_httprpc_Request_descriptor,
+                new java.lang.String[]{"Request",},
+                ru.hh.httprpc.Messages.Request.class,
+                ru.hh.httprpc.Messages.Request.Builder.class);
+            internal_static_hh_search_httprpc_Reply_descriptor =
+                getDescriptor().getMessageTypes().get(1);
+            internal_static_hh_search_httprpc_Reply_fieldAccessorTable = new
+                com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+                internal_static_hh_search_httprpc_Reply_descriptor,
+                new java.lang.String[]{"Reply",},
+                ru.hh.httprpc.Messages.Reply.class,
+                ru.hh.httprpc.Messages.Reply.Builder.class);
+            return null;
+          }
+        };
     com.google.protobuf.Descriptors.FileDescriptor
-      .internalBuildGeneratedFileFrom(descriptorData,
-        new com.google.protobuf.Descriptors.FileDescriptor[] {
-        }, assigner);
+        .internalBuildGeneratedFileFrom(descriptorData,
+            new com.google.protobuf.Descriptors.FileDescriptor[]{
+            }, assigner);
   }
-  
-  public static void internalForceInit() {}
-  
+
+  public static void internalForceInit() {
+  }
+
   // @@protoc_insertion_point(outer_class_scope)
 }

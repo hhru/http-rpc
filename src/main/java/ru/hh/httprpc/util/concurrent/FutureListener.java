@@ -35,15 +35,19 @@ public abstract class FutureListener<T> implements Runnable {
     }
   }
 
-  protected void success(T result) {}
+  protected void success(T result) {
+  }
 
-  protected void exception(Throwable exception) {}
+  protected void exception(Throwable exception) {
+  }
 
-  protected void cancelled() {}
+  protected void cancelled() {
+  }
 
   protected void interrupted(InterruptedException e) {
     log.error("Wtf?! A completed future's get() got interrupted", e);
   }
 
-  protected void done() {}
+  protected void done() {
+  }
 }

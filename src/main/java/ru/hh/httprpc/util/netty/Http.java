@@ -5,18 +5,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Throwables;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import static io.netty.channel.ChannelFutureListener.CLOSE;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import static java.lang.String.format;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import static io.netty.channel.ChannelFutureListener.CLOSE;
 import io.netty.handler.codec.http.HttpHeaders;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
@@ -26,6 +22,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.QueryStringEncoder;
+import static java.lang.String.format;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
 
 public class Http {
   public static HttpRequestBuilder request(HttpMethod method, String uri) {
