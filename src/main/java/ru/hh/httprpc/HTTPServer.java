@@ -1,7 +1,6 @@
 package ru.hh.httprpc;
 
 import com.google.common.util.concurrent.AbstractService;
-import io.netty.bootstrap.ChannelFactory;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -38,7 +37,7 @@ public class HTTPServer extends AbstractService {
    * @param options
    * @param ioThreads the maximum number of I/O worker threads
    */
-  public HTTPServer(TcpOptions options, int ioThreads, final ChannelHandler handler) {
+  public HTTPServer(TcpOptions<TcpOptions> options, int ioThreads, final ChannelHandler handler) {
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup(ioThreads);
     bootstrap = new ServerBootstrap()
@@ -57,12 +56,7 @@ public class HTTPServer extends AbstractService {
         ;
       }
     });
-    for (Map.Entry<ChannelOption, Object> option : options.toMap().entrySet()) {
-      bootstrap.option(option.getKey(), option.getValue());
-    }
-    for (Map.Entry<ChannelOption, Object> option : options.child().toMap().entrySet()) {
-      bootstrap.childOption(option.getKey(), option.getValue());
-    }
+    options.initializeBootstrap(bootstrap);
   }
   
   public InetSocketAddress getLocalAddress() {

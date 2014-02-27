@@ -45,7 +45,7 @@ public class RPCClient extends AbstractService {
   private final ChannelGroup allChannels;
   private final Serializer serializer;
 
-  public RPCClient(TcpOptions options, String basePath, int ioThreads, Serializer serializer) {
+  public RPCClient(TcpOptions<TcpOptions> options, String basePath, int ioThreads, Serializer serializer) {
     this.basePath = basePath;
     this.serializer = serializer;
     bossGroup = new NioEventLoopGroup(1);
@@ -63,9 +63,7 @@ public class RPCClient extends AbstractService {
             .addLast("httpAggregator", new HttpObjectAggregator(Integer.MAX_VALUE));
       }
     });
-    for (Map.Entry<ChannelOption, Object> entry : options.toMap().entrySet()) {
-      bootstrap.option(entry.getKey(), entry.getValue());
-    }
+    options.initializeBootstrap(bootstrap);
     startAsync().awaitRunning();
   }
 

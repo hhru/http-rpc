@@ -1,84 +1,114 @@
 package ru.hh.httprpc;
 
+import io.netty.bootstrap.AbstractBootstrap;
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Wrapper around bootstrap options map {@link io.netty.bootstrap.Bootstrap#option(java.util.Map)}
+ * Wrapper around bootstrap options map {@link io.netty.bootstrap.Bootstrap#option(io.netty.channel.ChannelOption, Object)}
  */
-public class TcpOptions {
-  private Map<ChannelOption, Object> options = new HashMap<ChannelOption, Object>();
-  private InetSocketAddress localAddress;
-  private TcpOptions child;
+public class TcpOptions<T extends TcpOptions> {
+  private final T self;
 
-  public static TcpOptions create() {
-    return new TcpOptions();
+  private TcpOptions() {
+    self = (T) this;
   }
 
-  public TcpOptions localAddress(InetSocketAddress localAddress) {
+  public static class ChildOptions extends TcpOptions<ChildOptions> {
+    @Override
+    public ChildOptions child(ChildOptions child) {
+      throw new UnsupportedOperationException();
+    }
+    @Override
+    public void initializeBootstrap(AbstractBootstrap bootstrap) {
+      throw new UnsupportedOperationException();
+    }
+    @Override
+    public void initializeBootstrap(ServerBootstrap bootstrap) {
+      throw new UnsupportedOperationException();
+    }
+  }
+  protected Map<ChannelOption, Object> options = new HashMap<ChannelOption, Object>();
+  private InetSocketAddress localAddress;
+  private ChildOptions child;
+
+  public static TcpOptions<TcpOptions> create() {
+    return new TcpOptions<TcpOptions>();
+  }
+
+  public static ChildOptions newChildOptions() {
+    return new ChildOptions();
+  }
+
+  public T localAddress(InetSocketAddress localAddress) {
     this.localAddress = localAddress;
-    return this;
+    return self;
   }
   
   public InetSocketAddress localAddress() {
     return localAddress;
   }
 
-  public TcpOptions backlog(int backlog) {
+  public T backlog(int backlog) {
     options.put(ChannelOption.SO_BACKLOG, backlog);
-    return this;
+    return self;
   }
   
-  public TcpOptions connectTimeoutMillis(int connectTimeoutMillis) {
+  public T connectTimeoutMillis(int connectTimeoutMillis) {
     options.put(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis);
-    return this;
+    return self;
   }
   
-  public TcpOptions keepAlive(boolean keepAlive) {
+  public T keepAlive(boolean keepAlive) {
     options.put(ChannelOption.SO_KEEPALIVE, keepAlive);
-    return this;
+    return self;
   }
   
-  public TcpOptions reuseAddress(boolean reuseAddress) {
+  public T reuseAddress(boolean reuseAddress) {
     options.put(ChannelOption.SO_REUSEADDR, reuseAddress);
-    return this;
+    return self;
   }
   
-  public TcpOptions soLinger(int soLinger) {
+  public T soLinger(int soLinger) {
     options.put(ChannelOption.SO_LINGER, soLinger);
-    return this;
+    return self;
   }
   
-  public TcpOptions tcpNoDelay(boolean tcpNoDelay) {
+  public T tcpNoDelay(boolean tcpNoDelay) {
     options.put(ChannelOption.TCP_NODELAY, tcpNoDelay);
-    return this;
+    return self;
   }
   
-  public TcpOptions receiveBufferSize(int receiveBufferSize) {
+  public T receiveBufferSize(int receiveBufferSize) {
     options.put(ChannelOption.SO_RCVBUF, receiveBufferSize);
-    return this;
+    return self;
   }
   
-  public TcpOptions sendBufferSize(int sendBufferSize) {
+  public T sendBufferSize(int sendBufferSize) {
     options.put(ChannelOption.SO_SNDBUF, sendBufferSize);
-    return this;
+    return self;
   }
-  
-  public TcpOptions child(TcpOptions child) {
+
+  public T child(ChildOptions child) {
     this.child = child;
-    return this;
+    return self;
   }
 
-  public TcpOptions child() {
-    if (child == null) {
-      child = new TcpOptions();
+  public void initializeBootstrap(AbstractBootstrap bootstrap) {
+    for (Map.Entry<ChannelOption, Object> entry : options.entrySet()) {
+      bootstrap.option(entry.getKey(), entry.getValue());
     }
-    return child;
   }
 
-  public Map<ChannelOption, Object> toMap() {
-    return options;
+  public void initializeBootstrap(ServerBootstrap bootstrap) {
+    initializeBootstrap((AbstractBootstrap) bootstrap);
+    if (child != null) {
+      for (Map.Entry<ChannelOption, Object> entry : child.options.entrySet()) {
+        bootstrap.childOption(entry.getKey(), entry.getValue());
+      }
+    }
   }
 }
