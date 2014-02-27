@@ -3,19 +3,16 @@ package ru.hh.httprpc;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jboss.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandler;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.concurrent.ExecutionException;
+import static org.testng.Assert.assertEquals;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import ru.hh.httprpc.serialization.ProtobufSerializer;
 import ru.hh.httprpc.util.netty.RoutingHandler;
-import ru.hh.httprpc.InetSocketAddress;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.concurrent.ExecutionException;
-
-import static org.testng.Assert.assertEquals;
 
 public class ProtobufTest {
   protected String basePath = "/apiBase";
@@ -28,7 +25,7 @@ public class ProtobufTest {
     TcpOptions serverOptions = TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0));
     serverHandler = new RPCHandler(new ProtobufSerializer());
     RoutingHandler router = new RoutingHandler(
-      ImmutableMap.<String, ChannelHandler>builder().put(basePath, serverHandler).build());
+        ImmutableMap.<String, ChannelHandler>builder().put(basePath, serverHandler).build());
     server = new HTTPServer(serverOptions, 2, router);
     server.startAsync().awaitRunning();
     client = new RPCClient(TcpOptions.create(), basePath, 2, new ProtobufSerializer());
@@ -47,12 +44,12 @@ public class ProtobufTest {
     serverHandler.register(signature, serverMethod);
 
     final Messages.Request argument = Messages.Request.newBuilder().setRequest("hello").build();
-    
+
     Messages.Reply local = serverMethod.call(null, argument).get();
-    
+
     ClientMethod<Messages.Request, Messages.Reply> clientMethod = client.createMethod(signature);
-    Messages.Reply remote = clientMethod.call(server.getLocalAddress(), new Envelope(10, "asdf"), argument).get();
-    
+    Messages.Reply remote = clientMethod.call(server.getLocalAddress(), new Envelope(100, "asdf"), argument).get();
+
     assertEquals(remote, local);
   }
 

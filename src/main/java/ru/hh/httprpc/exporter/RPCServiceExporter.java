@@ -25,7 +25,7 @@ public class RPCServiceExporter extends AbstractRPCServiceExporter<Service> {
     String serviceName = service.getDescriptorForType().getName();
     for (final Descriptors.MethodDescriptor methodDescriptor : service.getDescriptorForType().getMethods()) {
       String methodName = methodDescriptor.getName();
-      final String path  = String.format("/%s/%s", serviceName, methodName);
+      final String path = String.format("/%s/%s", serviceName, methodName);
 
       @SuppressWarnings("unchecked")
       Class<Message> i = (Class<Message>) service.getRequestPrototype(methodDescriptor).getClass();

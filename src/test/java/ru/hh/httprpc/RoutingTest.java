@@ -3,17 +3,16 @@ package ru.hh.httprpc;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jboss.netty.channel.ChannelHandler;
-import org.testng.annotations.Test;
-import ru.hh.httprpc.serialization.JavaSerializer;
-import ru.hh.httprpc.util.netty.RoutingHandler;
-import ru.hh.httprpc.InetSocketAddress;
-
+import io.netty.channel.ChannelHandler;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
-
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+import org.testng.annotations.Test;
+import ru.hh.httprpc.serialization.JavaSerializer;
+import ru.hh.httprpc.util.netty.RoutingHandler;
 
 public class RoutingTest {
   @Test
@@ -22,16 +21,16 @@ public class RoutingTest {
     RPCHandler handler1 = new RPCHandler(serializer);
     RPCHandler handler2 = new RPCHandler(serializer);
     RoutingHandler router = new RoutingHandler(
-      ImmutableMap.<String, ChannelHandler>builder()
-        .put("/one", handler1)
-        .put("/two", handler2)
-        .build());
+        ImmutableMap.<String, ChannelHandler>builder()
+            .put("/one", handler1)
+            .put("/two", handler2)
+            .build());
     HTTPServer server = new HTTPServer(TcpOptions.create().localAddress(new InetSocketAddress(InetAddress.getLocalHost(), 0)), 2, router);
 
     RPCClient client1 = new RPCClient(TcpOptions.create(), "/one", 2, serializer);
     RPCClient client2 = new RPCClient(TcpOptions.create(), "/two", 2, serializer);
     RPCClient client3 = new RPCClient(TcpOptions.create(), "/noexisting", 2, serializer);
-    
+
     RPC<Void, String> signature = RPC.signature("/method", Void.class, String.class);
     server.startAsync().awaitRunning();
     try {
@@ -41,7 +40,7 @@ public class RoutingTest {
           return Futures.immediateFuture("one");
         }
       });
-      
+
       handler2.register(signature, new ServerMethod<Void, String>() {
         @Override
         public ListenableFuture<String> call(Envelope envelope, Void argument) {
@@ -52,12 +51,12 @@ public class RoutingTest {
       ClientMethod<Void, String> method1 = client1.createMethod(signature);
       ClientMethod<Void, String> method2 = client2.createMethod(signature);
       ClientMethod<Void, String> method3 = client3.createMethod(signature);
-      
-      
+
+
       Envelope envelope = new Envelope(1000, "asdfasdfas");
       assertEquals(method1.call(server.getLocalAddress(), envelope, null).get(), "one");
       assertEquals(method2.call(server.getLocalAddress(), envelope, null).get(), "two");
-      
+
       try {
         assertEquals(method3.call(server.getLocalAddress(), envelope, null).get(), "wtf?");
         fail();

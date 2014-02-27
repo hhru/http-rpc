@@ -11,12 +11,12 @@ import org.testng.annotations.Test;
 public class BadResponseTest extends AbstractClientServerTest {
   @DataProvider(name = "methods")
   public Object[][] methods() {
-    return new Object[][] {
-      {new ThrowMethod()},
-      {new FailedFutureMethod()}
+    return new Object[][]{
+        {new ThrowMethod()},
+        {new FailedFutureMethod()}
     };
   }
-  
+
   @Test(dataProvider = "methods")
   public void test(ServerMethod<String, Object> method) throws InterruptedException {
     RPC<String, Object> signature = RPC.signature("/throwMethod", String.class, Object.class);
@@ -37,14 +37,14 @@ public class BadResponseTest extends AbstractClientServerTest {
       }
     }
   }
-  
+
   private static class ThrowMethod implements ServerMethod<String, Object> {
     @Override
     public ListenableFuture<Object> call(Envelope envelope, String message) {
       throw new RuntimeException(message);
     }
   }
-  
+
   private static class FailedFutureMethod implements ServerMethod<String, Object> {
 
     @Override

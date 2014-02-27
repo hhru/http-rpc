@@ -12,7 +12,8 @@ public class EnvelopeController implements RpcController {
   private Envelope envelope;
   private Throwable reason;
 
-  public EnvelopeController() { }
+  public EnvelopeController() {
+  }
 
   public EnvelopeController(Envelope envelope) {
     this.envelope = envelope;
@@ -73,7 +74,7 @@ public class EnvelopeController implements RpcController {
   public <T> void listenToFuture(ListenableFuture<T> future, final RpcCallback<T> done) {
     new FutureListener<T>(future) {
       protected void success(T result) {
-         done.run(result);
+        done.run(result);
       }
 
       protected void exception(Throwable t) {

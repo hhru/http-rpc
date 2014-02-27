@@ -1,19 +1,19 @@
 package ru.hh.httprpc.spring.httpinvoker;
 
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationResult;
+import static org.testng.Assert.assertEquals;
 import org.testng.annotations.Test;
 import ru.hh.httprpc.AbstractClientServerTest;
 import ru.hh.httprpc.Envelope;
 import ru.hh.httprpc.RPC;
 import ru.hh.httprpc.ServerMethod;
-import static com.google.common.util.concurrent.Futures.immediateFuture;
-import static org.testng.Assert.assertEquals;
 
 public class SpringHTTPInvokerCompatibilityTest extends AbstractClientServerTest {
-  
+
   private interface TestRPCInterface {
     String ping(String data);
   }
@@ -24,7 +24,7 @@ public class SpringHTTPInvokerCompatibilityTest extends AbstractClientServerTest
 
   @Test
   public void roundTrip() throws Exception {
-    
+
     SpringHTTPIndapter adapter = new SpringHTTPIndapter();
     adapter.register(TestRPCAPI.PING, new ServerMethod<String, String>() {
       public ListenableFuture<String> call(Envelope envelope, String argument) {
@@ -32,7 +32,7 @@ public class SpringHTTPInvokerCompatibilityTest extends AbstractClientServerTest
       }
     });
 
-    RPC<RemoteInvocation,RemoteInvocationResult> signature = SpringHTTPIndapter.signature("/httpinvoker");
+    RPC<RemoteInvocation, RemoteInvocationResult> signature = SpringHTTPIndapter.signature("/httpinvoker");
     serverHandler.register(signature, adapter);
 
     HttpInvokerProxyFactoryBean invokerFactory = new HttpInvokerProxyFactoryBean();
@@ -41,7 +41,7 @@ public class SpringHTTPInvokerCompatibilityTest extends AbstractClientServerTest
     invokerFactory.afterPropertiesSet();
 
     TestRPCInterface remoteService = (TestRPCInterface) invokerFactory.getObject();
-    
+
     assertEquals(remoteService.ping("WTF?!"), "WTF?!");
   }
 }

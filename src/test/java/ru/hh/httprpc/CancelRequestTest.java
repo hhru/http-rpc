@@ -10,18 +10,18 @@ import org.testng.annotations.Test;
 public class CancelRequestTest extends AbstractClientServerTest {
   @DataProvider(name = "times")
   public Object[][] times() {
-    return new Object[][] {
-      {0, 1000},
-      {1, 1000},
-      {10, 1000},
-      {100, 1000},
-      {300, 1000},
-      {300, 10},
-      {300, 100}
+    return new Object[][]{
+        {0, 1000},
+        {1, 1000},
+        {10, 1000},
+        {100, 1000},
+        {300, 1000},
+        {300, 10},
+        {300, 100}
     };
   }
-  
-  @Test(dataProvider = "times") 
+
+  @Test(dataProvider = "times")
   public void test(long clientTimeout, long serverSleep) throws Exception {
     SleeperServerMethod serverMethod = new SleeperServerMethod();
 

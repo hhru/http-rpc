@@ -1,6 +1,6 @@
 package ru.hh.httprpc.serialization;
 
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import ru.hh.httprpc.RPCMethodException;
 
 public class SerializationException extends RPCMethodException {
