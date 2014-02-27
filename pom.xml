@@ -10,7 +10,7 @@
   <name>Netty RPC Implementation over HTTP</name>
   <groupId>ru.hh.http-rpc</groupId>
   <artifactId>http-rpc</artifactId>
-  <version>1.17-SNAPSHOT</version>
+  <version>1.17</version>
   <packaging>jar</packaging>
 
   <scm>
