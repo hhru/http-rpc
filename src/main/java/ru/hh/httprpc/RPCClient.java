@@ -157,16 +157,24 @@ public class RPCClient extends AbstractService {
             future.setException(e);
           }
         } else {
-          StringBuilder message = new StringBuilder("server at ").append(ctx.channel().remoteAddress()).append(fullPath)
-              .append(" returned: ").append(response.getStatus().toString());
           String contentType = response.headers().get(HttpHeaders.Names.CONTENT_TYPE);
           String details = null;
-          if (contentType != null && contentType.contains("text/plain")) {
-            details = content.toString(CharsetUtil.UTF_8);
+          final Throwable exception;
+          if (response.getStatus().equals(HttpResponseStatus.TOO_MANY_REQUESTS)) {
+            if (contentType != null && contentType.contains("text/plain")) {
+              details = content.toString(CharsetUtil.UTF_8);
+            }
+            exception = new TooManyRequestsException(details);
+          } else {
+            StringBuilder message = new StringBuilder("server at ").append(ctx.channel().remoteAddress()).append(fullPath)
+                .append(" returned: ").append(response.getStatus().toString());
+            if (contentType != null && contentType.contains("text/plain")) {
+              details = content.toString(CharsetUtil.UTF_8);
+            }
+            logger.debug("{}, remote details:\n {}", message, details);
+            exception = new BadResponseException(message.toString(), details);
           }
-          logger.debug("{}, remote details:\n {}", message, details);
-
-          future.setException(new BadResponseException(message.toString(), details));
+          future.setException(exception);
         }
       }
 

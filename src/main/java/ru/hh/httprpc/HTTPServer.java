@@ -15,6 +15,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static io.netty.handler.codec.http.HttpResponseStatus.TOO_MANY_REQUESTS;
 import io.netty.handler.codec.http.HttpServerCodec;
 import java.nio.channels.ClosedChannelException;
 import org.slf4j.Logger;
@@ -30,11 +31,15 @@ public class HTTPServer extends AbstractService {
   private final ChannelTracker channelTracker = new ChannelTracker();
   volatile private Channel serverChannel;
 
-  /**
-   * @param options
-   * @param ioThreads the maximum number of I/O worker threads
-   */
   public HTTPServer(TcpOptions<TcpOptions> options, int ioThreads, final ChannelHandler handler) {
+    this(options, ioThreads, Integer.MAX_VALUE, handler);
+  }
+
+  /**
+   * @param ioThreads the maximum number of I/O worker threads
+   * @param concurrentTasksLimit the maximum number of open connections for the server
+   */
+  public HTTPServer(TcpOptions<TcpOptions> options, int ioThreads, final int concurrentTasksLimit, final ChannelHandler handler) {
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup(ioThreads);
     bootstrap = new ServerBootstrap()
@@ -44,13 +49,22 @@ public class HTTPServer extends AbstractService {
         .childHandler(new ChannelInitializer<SocketChannel>() {
           @Override
           protected void initChannel(SocketChannel ch) throws Exception {
-            ch.pipeline()
-                .addLast("tracker", channelTracker)
-                .addLast("httpCodec", new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE))
-                .addLast("httpAggregator", new HttpObjectAggregator(Integer.MAX_VALUE))
-                    // todo: exception handler
-                .addLast("handler", handler)
-            ;
+            if (channelTracker.group.size() < concurrentTasksLimit) {
+              ch.pipeline()
+                  .addLast("tracker", channelTracker)
+                  .addLast("httpCodec", new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE))
+                  .addLast("httpAggregator", new HttpObjectAggregator(Integer.MAX_VALUE))
+                      // todo: exception handler
+                  .addLast("handler", handler)
+              ;
+            } else {
+              ch.pipeline()
+                  .addLast("httpCodec", new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE));
+              Http.response(TOO_MANY_REQUESTS)
+                  .containing("limit: " + concurrentTasksLimit)
+                  .sendAndClose(ch);
+              logger.warn("too many requests, limit: " + concurrentTasksLimit);
+            }
           }
         });
     options.initializeBootstrap(bootstrap);

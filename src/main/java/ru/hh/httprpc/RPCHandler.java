@@ -16,6 +16,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpResponseStatus.TOO_MANY_REQUESTS;
 import static java.lang.String.format;
 import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
@@ -102,6 +103,8 @@ public class RPCHandler extends HttpHandler {
     if (e instanceof RPCMethodException) {
       RPCMethodException methodException = (RPCMethodException) e;
       sendError(channel, methodException.getStatus(), e, e.getMessage(), path);
+    } else if (e instanceof TooManyRequestsException) {
+      sendWarn(channel, TOO_MANY_REQUESTS, e, "too many requests '%s'", path);
     } else if (e instanceof IllegalArgumentException) {
       sendError(channel, BAD_REQUEST, e, "bad parameters for '%s'", path);
     } else {
@@ -111,6 +114,13 @@ public class RPCHandler extends HttpHandler {
 
   private static void sendError(Channel channel, HttpResponseStatus status, Throwable exception, String message, Object... args) {
     logger.error(format(message, args), exception);
+    Http.response(status).
+        containing(exception).
+        sendAndClose(channel);
+  }
+
+  private static void sendWarn(Channel channel, HttpResponseStatus status, Throwable exception, String message, Object... args) {
+    logger.warn(exception.getClass().getSimpleName() + ": " + exception.getMessage() + ", " + format(message, args));
     Http.response(status).
         containing(exception).
         sendAndClose(channel);
