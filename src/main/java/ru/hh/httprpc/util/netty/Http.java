@@ -71,7 +71,8 @@ public class Http {
     }
 
     public SELF containing(String content) {
-      return containing("text/plain; charset=UTF-8", Unpooled.copiedBuffer(content, Charsets.UTF_8));
+      ByteBuf buffer = Unpooled.wrappedBuffer(content.getBytes(Charsets.UTF_8));
+      return containing("text/plain; charset=UTF-8", buffer);
     }
 
     public SELF containing(Throwable throwable) {
