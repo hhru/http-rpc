@@ -14,6 +14,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpResponseEncoder;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.TOO_MANY_REQUESTS;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -59,7 +60,7 @@ public class HTTPServer extends AbstractService {
               ;
             } else {
               ch.pipeline()
-                  .addLast("httpCodec", new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE));
+                  .addLast("httpCodec", new HttpResponseEncoder());
               Http.response(TOO_MANY_REQUESTS)
                   .containing("limit: " + concurrentTasksLimit)
                   .sendAndClose(ch);
