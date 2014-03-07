@@ -14,10 +14,12 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
 import org.slf4j.Logger;
@@ -30,23 +32,41 @@ public class HTTPServer extends AbstractService {
   private final ServerBootstrap bootstrap;
   private final ChannelTracker channelTracker = new ChannelTracker();
   volatile private Channel serverChannel;
-  
-  /**
-   * @param options
-   * @param ioThreads the maximum number of I/O worker threads for {@link org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory#NioServerSocketChannelFactory(java.util.concurrent.Executor, java.util.concurrent.Executor, int)}
-   */
+
   public HTTPServer(TcpOptions options, int ioThreads, final ChannelHandler handler) {
+    this(options, ioThreads, Integer.MAX_VALUE, handler);
+  }
+
+  /**
+   * @param ioThreads the maximum number of I/O worker threads
+   * @param concurrentRequestsLimit the maximum number of open connections for the server
+   */
+  public HTTPServer(TcpOptions options, int ioThreads, final int concurrentRequestsLimit, final ChannelHandler handler) {
     ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
     bootstrap = new ServerBootstrap(factory);
     bootstrap.setOptions(options.toMap());
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
-        return Channels.pipeline(
-            channelTracker,
-            new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
-            // todo: exception handler
-            handler
-        );
+        if (channelTracker.group.size() < concurrentRequestsLimit) {
+          return Channels.pipeline(
+              channelTracker,
+              new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
+              // todo: exception handler
+              handler
+          );
+        } else {
+          return Channels.pipeline(
+              new SimpleChannelUpstreamHandler() {
+                @Override
+                public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+                  Http.response(Http.TOO_MANY_REQUESTS)
+                      .containing("httprpc configured to handle not more than " + concurrentRequestsLimit + " concurrent requests")
+                      .sendAndClose(e.getChannel());
+                }
+              },
+              new HttpResponseEncoder()
+          );
+        }
       }
     });
   }

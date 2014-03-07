@@ -29,6 +29,8 @@ import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 
 public class Http {
+  public static final HttpResponseStatus TOO_MANY_REQUESTS = new HttpResponseStatus(429, "Too Many Requests");
+
   public static HttpRequestBuilder request(HttpMethod method, String uri) {
     return new HttpRequestBuilder(method, uri);
   }
