@@ -21,6 +21,7 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,7 @@ public class HTTPServer extends AbstractService {
               new SimpleChannelUpstreamHandler() {
                 @Override
                 public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-                  Http.response(Http.TOO_MANY_REQUESTS)
+                  Http.response(SERVICE_UNAVAILABLE)
                       .containing("httprpc configured to handle not more than " + concurrentRequestsLimit + " concurrent requests")
                       .sendAndClose(e.getChannel());
                 }

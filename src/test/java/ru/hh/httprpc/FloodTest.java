@@ -12,11 +12,11 @@ import java.util.concurrent.TimeUnit;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
 import org.testng.annotations.Test;
-import ru.hh.httprpc.util.netty.Http;
 
 public class FloodTest extends AbstractClientServerTest {
   @Test
@@ -52,7 +52,7 @@ public class FloodTest extends AbstractClientServerTest {
         if (counter.getAndIncrement() < maxTasks) {
           return super.call(envelope, argument);
         } else {
-          return Futures.immediateFailedFuture(new RPCMethodException(Http.TOO_MANY_REQUESTS, "limit: " + maxTasks));
+          return Futures.immediateFailedFuture(new RPCMethodException(SERVICE_UNAVAILABLE, "limit: " + maxTasks));
         }
       }
     };
@@ -80,7 +80,7 @@ public class FloodTest extends AbstractClientServerTest {
       Throwable cause = e.getCause();
       assertEquals(cause.getClass(), BadResponseException.class);
       BadResponseException response = (BadResponseException) cause;
-      assertTrue(response.getMessage().contains(Http.TOO_MANY_REQUESTS.getReasonPhrase()));
+      assertTrue(response.getMessage().contains(SERVICE_UNAVAILABLE.getReasonPhrase()));
     }
 
     for (Future longFuture : longFutures)
