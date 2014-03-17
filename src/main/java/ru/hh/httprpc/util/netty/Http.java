@@ -7,6 +7,7 @@ import static java.lang.String.format;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
@@ -53,6 +54,20 @@ public class Http {
 
     public SELF host(String hostName) {
       message.setHeader(HOST, hostName);
+
+      return self;
+    }
+
+    public SELF header(String name, Object value) {
+      message.headers().set(name, value);
+
+      return self;
+    }
+
+    public SELF header(Map<String, ?> values) {
+      for (Map.Entry<String, ?> entry : values.entrySet()) {
+        message.headers().set(entry.getKey(), entry.getValue());
+      }
 
       return self;
     }
