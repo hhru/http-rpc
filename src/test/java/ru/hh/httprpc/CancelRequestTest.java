@@ -1,7 +1,9 @@
 package ru.hh.httprpc;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import java.util.concurrent.ExecutionException;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.DataProvider;
@@ -20,8 +22,12 @@ public class CancelRequestTest extends AbstractClientServerTest {
       {300, 100}
     };
   }
-  
-  @Test(dataProvider = "times") 
+
+  {
+    concurrentLimit = 1;
+  }
+
+  @Test(dataProvider = "times")
   public void test(long clientTimeout, long serverSleep) throws Exception {
     SleeperServerMethod serverMethod = new SleeperServerMethod();
 
@@ -43,5 +49,21 @@ public class CancelRequestTest extends AbstractClientServerTest {
       assertTrue(serverMethod.completed());
       assertFalse(serverMethod.interrupted());
     }
+  }
+
+  @Test
+  public void testReleaseAfterCancel() throws Exception {
+    SleeperServerMethod serverMethod = new SleeperServerMethod();
+
+    serverHandler.register(LONG2LONG_METHOD, serverMethod);
+    ClientMethod<Long, Long> clientMethod = client.createMethod(LONG2LONG_METHOD);
+
+    ListenableFuture<Long> result = clientMethod.call(address, new Envelope(), 100L);
+    Thread.sleep(50L);
+    result.cancel(true);
+    Thread.sleep(100L);
+
+    ListenableFuture<Long> secondResult = clientMethod.call(address, new Envelope(), 10L);
+    secondResult.get();
   }
 }

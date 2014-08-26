@@ -15,14 +15,12 @@ public class JavaSerializer implements Serializer<Object, Object> {
     return "application/x-java-serialized-object";
   }
 
-  @SuppressWarnings("unchecked")
   public Function<Object, ChannelBuffer> encoder(Class<Object> clazz) {
-    return (Function<Object, ChannelBuffer>) ENCODER;
+    return ENCODER;
   }
 
-  @SuppressWarnings("unchecked")
   public Function<ChannelBuffer, Object> decoder(Class<Object> clazz) {
-    return (Function<ChannelBuffer, Object>) DECODER;
+    return DECODER;
   }
 
   private static Function<Object, ChannelBuffer> ENCODER = new Function<Object, ChannelBuffer>() {

@@ -19,16 +19,19 @@ import static org.testng.AssertJUnit.assertTrue;
 import org.testng.annotations.Test;
 
 public class FloodTest extends AbstractClientServerTest {
+  {
+    concurrentLimit = ioThreads + 1;
+  }
   @Test
   public void test() throws ExecutionException, TimeoutException, InterruptedException {
     SleeperServerMethod serverMethod = new SleeperServerMethod();
     serverHandler.register(LONG2LONG_METHOD, serverMethod);
 
     ClientMethod<Long, Long> clientMethod = client.createMethod(LONG2LONG_METHOD);
-    
+
     List<Future> longFutures = newArrayList();
     // flood server's ioThreads with long tasks (if it processes them in ioThreads) 
-    for (int i = 0; i < ioThreads + 1; i++) {
+    for (int i = 0; i < concurrentLimit - 1; i++) {
       longFutures.add(clientMethod.call(address, new Envelope(), 10000L));
     }
 
@@ -44,7 +47,7 @@ public class FloodTest extends AbstractClientServerTest {
 
   @Test
   public void rateLimitHandlerTest() throws UnknownHostException, InterruptedException, TimeoutException, ExecutionException {
-    final int maxTasks = 5;
+    final int maxTasks = concurrentLimit - 1;
     final AtomicInteger counter = new AtomicInteger();
     SleeperServerMethod serverMethod = new SleeperServerMethod() {
       @Override

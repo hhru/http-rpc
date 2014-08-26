@@ -1,9 +1,11 @@
 package ru.hh.httprpc;
 
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
 import java.nio.channels.ClosedChannelException;
 
-import java.util.concurrent.Executors;
+import static java.util.concurrent.Executors.newCachedThreadPool;
+import java.util.concurrent.TimeUnit;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -23,16 +25,77 @@ import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
+import org.jboss.netty.handler.timeout.IdleStateHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.httprpc.util.netty.Http;
 
 public class HTTPServer extends AbstractService {
-  public static final Logger logger = LoggerFactory.getLogger(HTTPServer.class);
-  
-  private final ServerBootstrap bootstrap;
+  private static final Logger logger = LoggerFactory.getLogger(HTTPServer.class);
+
+  private static final int DEFAULT_NETWORK_TIMEOUT_MILLIS = 1000;
+
   private final ChannelTracker channelTracker = new ChannelTracker();
+  private final Timer timer = new HashedWheelTimer();
+  private final ServerBootstrap bootstrap;
+
   volatile private Channel serverChannel;
+
+  public static class Builder {
+    private TcpOptions options = new TcpOptions();
+    private int ioThreads = 2;
+    private int concurrentRequestsLimit = Runtime.getRuntime().availableProcessors();
+    private int readTimeout = DEFAULT_NETWORK_TIMEOUT_MILLIS;
+    private int writeTimeout = DEFAULT_NETWORK_TIMEOUT_MILLIS;
+    private ChannelHandler handler;
+
+    public Builder options(TcpOptions options) {
+      this.options = options;
+      return this;
+    }
+
+    public Builder ioThreads(int ioThreads) {
+      this.ioThreads = ioThreads;
+      return this;
+    }
+
+    public Builder concurrentRequestsLimit(int concurrentRequestsLimit) {
+      this.concurrentRequestsLimit = concurrentRequestsLimit;
+      return this;
+    }
+
+    /**
+     * @param readTimeout in milliseconds
+     */
+    public Builder readTimeout(int readTimeout) {
+      this.readTimeout = readTimeout;
+      return this;
+    }
+
+    /**
+     * @param writeTimeout in milliseconds
+     */
+    public Builder writeTimeout(int writeTimeout) {
+      this.writeTimeout = writeTimeout;
+      return this;
+    }
+
+    public Builder handler(ChannelHandler handler) {
+      this.handler = handler;
+      return this;
+    }
+
+    public HTTPServer build() {
+      Preconditions.checkState(handler != null, "handler should be set");
+      return new HTTPServer(this);
+    }
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
 
   public HTTPServer(TcpOptions options, int ioThreads, final ChannelHandler handler) {
     this(options, ioThreads, Integer.MAX_VALUE, handler);
@@ -41,27 +104,37 @@ public class HTTPServer extends AbstractService {
   /**
    * @param ioThreads the maximum number of I/O worker threads
    * @param concurrentRequestsLimit the maximum number of open connections for the server
+   * @deprecated use HTTPServer(Builder builder) and setters
    */
   public HTTPServer(TcpOptions options, int ioThreads, final int concurrentRequestsLimit, final ChannelHandler handler) {
-    ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
+    this(builder().options(options).ioThreads(ioThreads).concurrentRequestsLimit(concurrentRequestsLimit).handler(handler));
+  }
+
+  public HTTPServer(final Builder builder) {
+    ChannelFactory factory = new NioServerSocketChannelFactory(newCachedThreadPool(), newCachedThreadPool(), builder.ioThreads);
     bootstrap = new ServerBootstrap(factory);
-    bootstrap.setOptions(options.toMap());
+    bootstrap.setOptions(builder.options.toMap());
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
-        if (channelTracker.group.size() < concurrentRequestsLimit) {
+        if (channelTracker.group.size() < builder.concurrentRequestsLimit) {
+          RequestPhaseAwareIdleHandler idleHandler = new RequestPhaseAwareIdleHandler();
           return Channels.pipeline(
               channelTracker,
+              new IdleStateHandler(timer, builder.readTimeout, builder.writeTimeout, 0, TimeUnit.MILLISECONDS),
+              idleHandler,
+              idleHandler.startWriting(), // after encoding http response (downstream) we're in a writing stage
               new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
+              idleHandler.startProcessing(), // after decoding http request (upstream) we're in a processing phase
               // todo: exception handler
-              handler
+              builder.handler
           );
         } else {
           return Channels.pipeline(
               new SimpleChannelUpstreamHandler() {
                 @Override
-                public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+                public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
                   Http.response(SERVICE_UNAVAILABLE)
-                      .containing("httprpc configured to handle not more than " + concurrentRequestsLimit + " concurrent requests")
+                      .containing("httprpc configured to handle not more than " + builder.concurrentRequestsLimit + " concurrent requests")
                       .sendAndClose(e.getChannel());
                 }
               },
@@ -76,6 +149,7 @@ public class HTTPServer extends AbstractService {
     return InetSocketAddress.createFromJavaInetSocketAddress((java.net.InetSocketAddress) serverChannel.getLocalAddress());
   }
 
+  @Override
   protected void doStart() {
     logger.debug("starting");
     try {
@@ -89,11 +163,13 @@ public class HTTPServer extends AbstractService {
     }
   }
 
+  @Override
   protected void doStop() {
     logger.debug("stopping");
     try {
       serverChannel.close().awaitUninterruptibly();
       channelTracker.waitForChildren();
+      timer.stop();
       bootstrap.releaseExternalResources();
       logger.debug("stopped");
       notifyStopped();
@@ -108,6 +184,7 @@ public class HTTPServer extends AbstractService {
   private static class ChannelTracker extends SimpleChannelUpstreamHandler {
     private final ChannelGroup group = new DefaultChannelGroup();
 
+    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
       if (ClosedChannelException.class.isInstance(e.getCause())) {
         logger.debug("Got " + e.getCause().getClass().getName());
@@ -119,6 +196,7 @@ public class HTTPServer extends AbstractService {
       }
     }
 
+    @Override
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
       group.add(e.getChannel());
       ctx.sendUpstream(e);

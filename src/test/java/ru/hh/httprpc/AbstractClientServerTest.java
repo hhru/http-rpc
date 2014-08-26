@@ -19,6 +19,7 @@ public abstract class AbstractClientServerTest {
   protected RPCHandler serverHandler;
   protected RPCClient client;
   protected int ioThreads = 2;
+  protected int concurrentLimit = ioThreads + 2;
 
   @BeforeMethod
   public void start() throws UnknownHostException {
@@ -26,7 +27,7 @@ public abstract class AbstractClientServerTest {
     serverHandler = new RPCHandler(new JavaSerializer());
     RoutingHandler router = new RoutingHandler(
       ImmutableMap.<String, ChannelHandler>builder().put(basePath, serverHandler).build());
-    server = new HTTPServer(serverOptions, ioThreads, router);
+    server = new HTTPServer(serverOptions, ioThreads, concurrentLimit, router);
     server.startAsync().awaitRunning();
     address = server.getLocalAddress();
     client = new RPCClient(TcpOptions.create(), basePath, ioThreads, new JavaSerializer());

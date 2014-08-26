@@ -21,6 +21,8 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
   private int concurrentRequestsLimit = Integer.MAX_VALUE;
   private boolean tcpNoDelay;
   private int backlog = 50; // 50 is default value from java.net.ServerSocket
+  private int readTimeout = 0; // 0 means no timeout
+  private int writeTimeout = 0;
 
   protected final RPCHandler handler;
 
@@ -73,7 +75,14 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
         .localAddress(address)
         .tcpNoDelay(tcpNoDelay)
         .backlog(backlog);
-    server = new HTTPServer(tcpOptions, ioThreadsCount, concurrentRequestsLimit, handler);
+    server = HTTPServer.builder()
+        .options(tcpOptions)
+        .ioThreads(ioThreadsCount)
+        .concurrentRequestsLimit(concurrentRequestsLimit)
+        .readTimeout(readTimeout)
+        .writeTimeout(writeTimeout)
+        .handler(handler)
+        .build();
     log.info(String.format("Started protobuf server at %s", address.toString()));
   }
 
@@ -111,5 +120,21 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
 
   public void setConcurrentRequestsLimit(int concurrentRequestsLimit) {
     this.concurrentRequestsLimit = concurrentRequestsLimit > 0 ? concurrentRequestsLimit : Integer.MAX_VALUE;
+  }
+
+  public int getReadTimeout() {
+    return readTimeout;
+  }
+
+  public void setReadTimeout(int readTimeout) {
+    this.readTimeout = readTimeout;
+  }
+
+  public int getWriteTimeout() {
+    return writeTimeout;
+  }
+
+  public void setWriteTimeout(int writeTimeout) {
+    this.writeTimeout = writeTimeout;
   }
 }
