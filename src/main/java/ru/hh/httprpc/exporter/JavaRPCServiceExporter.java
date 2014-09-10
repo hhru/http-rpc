@@ -25,7 +25,7 @@ public class JavaRPCServiceExporter extends AbstractRPCServiceExporter<Object> {
     String serviceName = service.getClass().getSimpleName();
     for (final Method methodDescriptor : service.getClass().getDeclaredMethods()) {
       String methodName = methodDescriptor.getName();
-      final String path  = String.format("/%s/%s", serviceName, methodName);
+      final String path = String.format("/%s/%s", serviceName, methodName);
 
       if (!ListenableFuture.class.isAssignableFrom(methodDescriptor.getReturnType())) {
         continue;

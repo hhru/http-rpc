@@ -3,31 +3,30 @@ package ru.hh.httprpc.util.netty;
 import com.google.common.base.Charsets;
 import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Throwables;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import static io.netty.channel.ChannelFutureListener.CLOSE;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpMessage;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.QueryStringEncoder;
 import static java.lang.String.format;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import static org.jboss.netty.channel.ChannelFutureListener.CLOSE;
-import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import org.jboss.netty.handler.codec.http.HttpMessage;
-import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
-import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 
 public class Http {
   public static HttpRequestBuilder request(HttpMethod method, String uri) {
@@ -42,7 +41,7 @@ public class Http {
     return new HttpResponseBuilder(status);
   }
 
-  private static class HttpMessageBuilder<MESSAGE extends HttpMessage, SELF extends HttpMessageBuilder<MESSAGE, SELF>> {
+  private static class HttpMessageBuilder<MESSAGE extends FullHttpMessage, SELF extends HttpMessageBuilder<MESSAGE, SELF>> {
     @SuppressWarnings("unchecked")
     private final SELF self = (SELF) this;
     protected final MESSAGE message;
@@ -53,7 +52,7 @@ public class Http {
     }
 
     public SELF host(String hostName) {
-      message.setHeader(HOST, hostName);
+      message.headers().set(HOST, hostName);
 
       return self;
     }
@@ -72,20 +71,27 @@ public class Http {
       return self;
     }
 
-    public SELF containing(String contentType, ChannelBuffer buffer) {
-      message.setHeader(CONTENT_TYPE, contentType);
-      message.setHeader(CONTENT_LENGTH, buffer.readableBytes());
-      message.setContent(buffer);
+    public SELF containing(String contentType, ByteBuf buffer) {
+      message.headers().set(CONTENT_TYPE, contentType);
+      message.headers().set(CONTENT_LENGTH, buffer.readableBytes());
+      message.content().capacity(buffer.capacity() - buffer.readerIndex());
+      message.content().clear();
+      buffer.getBytes(0, message.content());
 
       return self;
     }
 
     public SELF containing(String contentType, byte[] buffer) {
-      return containing(contentType, ChannelBuffers.wrappedBuffer(buffer));
+      return containing(contentType, Unpooled.wrappedBuffer(buffer));
     }
 
     public SELF containing(String content) {
-      return containing("text/plain; charset=UTF-8", copiedBuffer(content, Charsets.UTF_8));
+      ByteBuf buffer = Unpooled.copiedBuffer(content, Charsets.UTF_8);
+      try {
+        return containing("text/plain; charset=UTF-8", buffer);
+      } finally {
+        buffer.release();
+      }
     }
 
     public SELF containing(Throwable throwable) {
@@ -101,25 +107,27 @@ public class Http {
     }
 
     private ChannelFuture sendTo(Channel channel, boolean close) {
-      if (message.getContent().capacity() == 0)
+      if (message.content().capacity() == 0) {
         containing(message.toString());
+      }
 
-      ChannelFuture f = channel.write(message);
-      if (close)
+      ChannelFuture f = channel.writeAndFlush(message);
+      if (close) {
         f.addListener(CLOSE);
+      }
       return f;
     }
   }
 
-  public static final class HttpRequestBuilder extends HttpMessageBuilder<HttpRequest, HttpRequestBuilder> {
+  public static final class HttpRequestBuilder extends HttpMessageBuilder<FullHttpRequest, HttpRequestBuilder> {
     HttpRequestBuilder(HttpMethod method, String uri) {
-      super(new DefaultHttpRequest(HTTP_1_1, method, uri));
+      super(new DefaultFullHttpRequest(HTTP_1_1, method, uri));
     }
   }
 
-  public static final class HttpResponseBuilder extends HttpMessageBuilder<HttpResponse, HttpResponseBuilder> {
+  public static final class HttpResponseBuilder extends HttpMessageBuilder<FullHttpResponse, HttpResponseBuilder> {
     HttpResponseBuilder(HttpResponseStatus status) {
-      super(new DefaultHttpResponse(HTTP_1_1, status));
+      super(new DefaultFullHttpResponse(HTTP_1_1, status));
     }
   }
 
@@ -156,7 +164,7 @@ public class Http {
     }
 
     public String path() {
-      return decoder.getPath();
+      return decoder.path();
     }
 
     public String singleString(String name) {
@@ -166,7 +174,7 @@ public class Http {
     }
 
     public String optionalSingleString(String name) {
-      List<String> values = decoder.getParameters().get(name);
+      List<String> values = decoder.parameters().get(name);
 
       if (values == null || values.size() == 0)
         return null;
@@ -188,7 +196,7 @@ public class Http {
     }
 
     public Integer optionalSingleInt(String name) {
-      List<String> values = decoder.getParameters().get(name);
+      List<String> values = decoder.parameters().get(name);
 
       if (values == null || values.size() == 0)
         return null;
@@ -213,7 +221,7 @@ public class Http {
     }
 
     public Long optionalSingleLong(String name) {
-      List<String> values = decoder.getParameters().get(name);
+      List<String> values = decoder.parameters().get(name);
 
       if (values == null || values.size() == 0)
         return null;

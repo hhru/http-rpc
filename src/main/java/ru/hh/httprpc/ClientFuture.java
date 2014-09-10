@@ -1,7 +1,7 @@
 package ru.hh.httprpc;
 
 import com.google.common.util.concurrent.AbstractFuture;
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 
 class ClientFuture<V> extends AbstractFuture<V> {
   private final Channel channel;

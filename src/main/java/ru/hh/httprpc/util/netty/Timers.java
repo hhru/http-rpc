@@ -1,11 +1,11 @@
 package ru.hh.httprpc.util.netty;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import io.netty.util.Timeout;
+import io.netty.util.Timer;
+import io.netty.util.TimerTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.Timer;
-import org.jboss.netty.util.TimerTask;
 import ru.hh.httprpc.util.concurrent.CallingThreadExecutor;
 
 public class Timers {
