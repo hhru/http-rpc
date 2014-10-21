@@ -165,7 +165,7 @@ public class RPCClient extends AbstractService {
           }
           logger.debug("{}, remote details:\n {}", message, details);
 
-          future.setException(new BadResponseException(message.toString(), details));
+          future.setException(new BadResponseException(message.toString(), details, response.getStatus()));
         }
       }
     

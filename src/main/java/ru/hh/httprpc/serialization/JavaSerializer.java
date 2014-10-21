@@ -7,6 +7,7 @@ import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 import ru.hh.httprpc.util.FastObjectInputStream;
 
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -42,6 +43,8 @@ public class JavaSerializer implements Serializer<Object, Object> {
         // Todo: Use JBoss Marshalling/Serialization?
         ObjectInputStream ois = new FastObjectInputStream(new ChannelBufferInputStream(serialForm));
         return ois.readObject();
+      } catch (InvalidClassException | ClassNotFoundException e) {
+        throw new VersionException(e);
       } catch (Exception e) {
         throw new SerializationException(e);
       }
