@@ -13,7 +13,7 @@ import ru.hh.httprpc.TcpOptions;
 import ru.hh.httprpc.serialization.Serializer;
 
 public abstract class AbstractRPCServiceExporter<T> implements InitializingBean {
-  private static final Logger log = LoggerFactory.getLogger(AbstractRPCServiceExporter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractRPCServiceExporter.class);
   private HTTPServer server;
   private String host;
   private int port;
@@ -45,13 +45,13 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
 
   public void startAndWait(InetAddress host) {
     initServer(host);
-    server.startAndWait();
+    server.startAsync().awaitRunning();
     updateServerPort();
   }
 
   public void start(InetAddress host) {
     initServer(host);
-    server.start();
+    server.startAsync();
     updateServerPort();
   }
 
@@ -62,11 +62,11 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
   }
 
   public void stopAndWait() {
-    server.stopAndWait();
+    server.stopAsync().awaitTerminated();
   }
 
   public void stop() {
-    server.stop();
+    server.stopAsync();
   }
 
   private void initServer(InetAddress host) {
@@ -83,7 +83,7 @@ public abstract class AbstractRPCServiceExporter<T> implements InitializingBean 
         .writeTimeout(writeTimeout)
         .handler(handler)
         .build();
-    log.info(String.format("Started protobuf server at %s", address.toString()));
+    LOG.info(String.format("Started protobuf server at %s", address.toString()));
   }
 
   public String getHost() {

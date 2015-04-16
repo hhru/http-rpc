@@ -38,7 +38,7 @@ import ru.hh.httprpc.serialization.Serializer;
 import ru.hh.httprpc.util.netty.Http;
 
 public class RPCClient extends AbstractService {
-  public static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
+  public static final Logger LOGGER = LoggerFactory.getLogger(RPCClient.class);
 
   private final Timer timer = new HashedWheelTimer(10, TimeUnit.MILLISECONDS);
   private final String basePath;
@@ -60,25 +60,25 @@ public class RPCClient extends AbstractService {
         );
       }
     });
-    start();
+    startAsync();
   }
 
   @Override
   protected void doStart() {
-    logger.debug("started");
+    LOGGER.debug("started");
     notifyStarted();
   }
 
   @Override
   protected void doStop() {
-    logger.debug("stopping");
+    LOGGER.debug("stopping");
     try {
       allChannels.close().awaitUninterruptibly();
       bootstrap.releaseExternalResources();
-      logger.trace("stopped");
+      LOGGER.trace("stopped");
       notifyStopped();
     } catch (RuntimeException e) {
-      logger.error("shutdown failed", e);
+      LOGGER.error("shutdown failed", e);
       throw e;
     } finally {
       timer.stop();
@@ -86,7 +86,7 @@ public class RPCClient extends AbstractService {
   }
 
   public <I, O> ClientMethod<I, O> createMethod(RPC<I, O> signature) {
-    return new NettyClientMethod<I, O>(
+    return new NettyClientMethod<>(
         basePath + signature.path,
         serializer.encoder(signature.inputClass),
         serializer.decoder(signature.outputClass)
@@ -110,10 +110,11 @@ public class RPCClient extends AbstractService {
 
       ChannelFuture connectFuture = bootstrap.connect(address);
       final Channel channel = connectFuture.getChannel();
-      final ClientFuture<O> clientFuture = new ClientFuture<O>(channel);
+      final ClientFuture<O> clientFuture = new ClientFuture<>(channel);
       allChannels.add(channel);
 
       connectFuture.addListener(new ChannelFutureListener() {
+        @Override
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
             channel.getPipeline().addFirst(ReadTimeoutHandler.class.getSimpleName(), new ReadTimeoutHandler(timer, envelope.timeoutMillis, TimeUnit.MILLISECONDS));
@@ -128,7 +129,7 @@ public class RPCClient extends AbstractService {
                 containing(serializer.getContentType(), encoder.apply(input)).
                 sendTo(channel);
           } else {
-            logger.debug("connection failed", future.getCause());
+            LOGGER.debug("connection failed", future.getCause());
             clientFuture.setException(future.getCause());
           }
         }
@@ -139,7 +140,7 @@ public class RPCClient extends AbstractService {
     private class ClientHandler extends SimpleChannelUpstreamHandler {
       private final ClientFuture<O> future;
   
-      public ClientHandler(ClientFuture<O> future) {
+      private ClientHandler(ClientFuture<O> future) {
         this.future = future;
       }
   
@@ -152,18 +153,18 @@ public class RPCClient extends AbstractService {
             O result = decoder.apply(content);
             future.set(result);
           } catch (RuntimeException e) {
-            logger.debug("failed to decode response", e);
+            LOGGER.debug("failed to decode response", e);
             future.setException(e);
           }
         } else {
           StringBuilder message = new StringBuilder("server at ").append(event.getChannel().getRemoteAddress()).append(fullPath)
             .append(" returned: ").append(response.getStatus().toString());
-          String contentType = response.getHeader(HttpHeaders.Names.CONTENT_TYPE);
+          final String contentType = response.headers().get(HttpHeaders.Names.CONTENT_TYPE);
           String details = null;
           if (contentType != null && contentType.contains("text/plain")) {
             details = content.toString(CharsetUtil.UTF_8);
           }
-          logger.debug("{}, remote details:\n {}", message, details);
+          LOGGER.debug("{}, remote details:\n {}", message, details);
 
           future.setException(new BadResponseException(message.toString(), details, response.getStatus()));
         }
@@ -173,12 +174,12 @@ public class RPCClient extends AbstractService {
       public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) throws Exception {
         Throwable cause = event.getCause();
         if (future.isCancelled() && cause instanceof ClosedChannelException) {
-          logger.debug("attempt to use closed channel after cancelling request", cause);
+          LOGGER.debug("attempt to use closed channel after cancelling request", cause);
         } else {
-          logger.debug("client got exception, closing channel", cause);
+          LOGGER.debug("client got exception, closing channel", cause);
           if (!future.setException(cause)) {
-            logger.warn(
-              String.format("failed to set exception for future, cancelled: %b, done: %b", future.isCancelled(), future.isDone()),
+            LOGGER.warn(
+                    String.format("failed to set exception for future, cancelled: %b, done: %b", future.isCancelled(), future.isDone()),
               cause);
           }
           event.getChannel().close();

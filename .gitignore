@@ -2,7 +2,8 @@
 /http-rpc.ipr
 /http-rpc.iws
 /.idea
-/target/
+target
 /.classpath
 /.project
 /.settings
+nb-configuration.xml

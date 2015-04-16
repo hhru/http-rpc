@@ -53,7 +53,7 @@ public class Http {
     }
 
     public SELF host(String hostName) {
-      message.setHeader(HOST, hostName);
+      message.headers().set(HOST, hostName);
 
       return self;
     }
@@ -73,8 +73,8 @@ public class Http {
     }
 
     public SELF containing(String contentType, ChannelBuffer buffer) {
-      message.setHeader(CONTENT_TYPE, contentType);
-      message.setHeader(CONTENT_LENGTH, buffer.readableBytes());
+      message.headers().set(CONTENT_TYPE, contentType);
+      message.headers().set(CONTENT_LENGTH, buffer.readableBytes());
       message.setContent(buffer);
 
       return self;
@@ -101,12 +101,14 @@ public class Http {
     }
 
     private ChannelFuture sendTo(Channel channel, boolean close) {
-      if (message.getContent().capacity() == 0)
+      if (message.getContent().capacity() == 0) {
         containing(message.toString());
+      }
 
       ChannelFuture f = channel.write(message);
-      if (close)
+      if (close) {
         f.addListener(CLOSE);
+      }
       return f;
     }
   }
@@ -139,6 +141,7 @@ public class Http {
       return this;
     }
 
+    @Override
     public String toString() {
       return encoder.toString();
     }
@@ -168,8 +171,9 @@ public class Http {
     public String optionalSingleString(String name) {
       List<String> values = decoder.getParameters().get(name);
 
-      if (values == null || values.size() == 0)
+      if (values == null || values.isEmpty()) {
         return null;
+      }
 
       checkArgument(values.size() == 1, "'%s' is expected to be a single-valued string, actual: %s", name, values);
 
@@ -190,8 +194,9 @@ public class Http {
     public Integer optionalSingleInt(String name) {
       List<String> values = decoder.getParameters().get(name);
 
-      if (values == null || values.size() == 0)
+      if (values == null || values.isEmpty()) {
         return null;
+      }
 
       checkArgument(values.size() == 1, "'%s' is expected to be a single-valued int, actual: %s", name, values);
       try {
@@ -215,8 +220,9 @@ public class Http {
     public Long optionalSingleLong(String name) {
       List<String> values = decoder.getParameters().get(name);
 
-      if (values == null || values.size() == 0)
+      if (values == null || values.isEmpty()) {
         return null;
+      }
 
       checkArgument(values.size() == 1, "'%s' is expected to be a single-valued long, actual: %s", name, values);
       try {
