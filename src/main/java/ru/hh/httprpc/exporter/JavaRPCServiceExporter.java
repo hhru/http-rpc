@@ -1,7 +1,7 @@
 package ru.hh.httprpc.exporter;
 
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -54,9 +54,9 @@ public class JavaRPCServiceExporter extends AbstractRPCServiceExporter<Object> {
               result = methodDescriptor.invoke(service);
             }
           } catch (IllegalAccessException e) {
-            result = makeExceptionFuture(e);
+            result = Futures.immediateFailedFuture(e);
           } catch (InvocationTargetException e) {
-            result = makeExceptionFuture(e);
+            result = Futures.immediateFailedFuture(e.getCause());
           }
           return (ListenableFuture<Serializable>) result;
         }
@@ -66,11 +66,4 @@ public class JavaRPCServiceExporter extends AbstractRPCServiceExporter<Object> {
       log.info(String.format("Method %s was registered at path %s", methodName, path));
     }
   }
-
-  private static ListenableFuture<Serializable> makeExceptionFuture(Exception e) {
-    SettableFuture<Serializable> result = SettableFuture.create();
-    result.setException(e);
-    return result;
-  }
-
 }
