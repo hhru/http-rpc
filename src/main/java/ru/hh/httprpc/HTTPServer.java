@@ -190,9 +190,13 @@ public class HTTPServer extends AbstractService {
         logger.debug("Got " + e.getCause().getClass().getName());
       } else {
         logger.error("Unexpected exception ", e.getCause());
-        Http.response(INTERNAL_SERVER_ERROR).
-            containing(e.getCause()).
-            sendAndClose(e.getChannel());
+        try {
+          Http.response(INTERNAL_SERVER_ERROR).
+              containing(e.getCause()).
+              sendAndClose(e.getChannel());
+        } catch (Exception ex) {
+          logger.error("Unexpected exception when close channel", ex);
+        }
       }
     }
 
