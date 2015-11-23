@@ -34,7 +34,7 @@ public class HTTPServerTest {
           public void run() {
             try {
               final JavaSerializer javaSerializer = new JavaSerializer();
-              final ChannelBuffer buffer = javaSerializer.encoder((Class) Long.class).apply(RESULT);
+              final ChannelBuffer buffer = (ChannelBuffer) javaSerializer.encoder((Class) Long.class).apply(RESULT);
               // processing/sleeping more than timeout, possible in "processing" state. before start sending results
               TimeUnit.MILLISECONDS.sleep(TEST_WRITE_TIMEOUT * 2);
               Http.response(HttpResponseStatus.OK).containing(javaSerializer.getContentType(), buffer).sendTo(channel);
