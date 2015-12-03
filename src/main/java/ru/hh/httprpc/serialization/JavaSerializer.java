@@ -6,6 +6,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.buffer.EmptyChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.httprpc.util.FastObjectInputStream;
@@ -52,6 +53,9 @@ public class JavaSerializer implements Serializer<Object, Object> {
   private static Function<ChannelBuffer, Object> DECODER = new Function<ChannelBuffer, Object>() {
     public Object apply(ChannelBuffer serialForm) {
       try {
+        if (serialForm instanceof EmptyChannelBuffer) {
+          return null;
+        }
         Stopwatch timer = Stopwatch.createStarted();
         // Todo: Use JBoss Marshalling/Serialization?
         ObjectInputStream ois = new FastObjectInputStream(new ChannelBufferInputStream(serialForm));
