@@ -51,7 +51,9 @@ public class RPCHandler extends HttpHandler {
     try {
       final ServerMethodDescriptor<?, ?> descriptor = methods.get(path);
       if (descriptor == null) {
-        logger.error(format("method '%s' not found", path));
+        if (!("/".equals(path))) {
+          logger.error(format("method '%s' not found", path));
+        }
         Http.response(NOT_FOUND).
             containing(format(
                 "method '%s' not found.\n" +
