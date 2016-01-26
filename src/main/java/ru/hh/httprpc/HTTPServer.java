@@ -16,7 +16,6 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
@@ -185,15 +184,23 @@ public class HTTPServer extends AbstractService {
     private final ChannelGroup group = new DefaultChannelGroup();
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-      if (ClosedChannelException.class.isInstance(e.getCause())) {
-        logger.debug("Got " + e.getCause().getClass().getName());
+    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) throws Exception {
+      if (event == null) {
+        logger.warn("exception event is null");
+        return;
+      }
+      Throwable cause = event.getCause();
+      if (cause instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
+      }
+      if (ClosedChannelException.class.isInstance(cause)) {
+        logger.debug("Got " + cause.getClass().getName());
       } else {
-        logger.error("Unexpected exception ", e.getCause());
+        logger.error("Unexpected exception ", cause);
         try {
           Http.response(INTERNAL_SERVER_ERROR).
-              containing(e.getCause()).
-              sendAndClose(e.getChannel());
+              containing(cause).
+              sendAndClose(event.getChannel());
         } catch (Exception ex) {
           logger.error("Unexpected exception when close channel", ex);
         }
