@@ -190,9 +190,6 @@ public class HTTPServer extends AbstractService {
         return;
       }
       Throwable cause = event.getCause();
-      if (cause instanceof InterruptedException) {
-        Thread.currentThread().interrupt();
-      }
       if (ClosedChannelException.class.isInstance(cause)) {
         logger.debug("Got " + cause.getClass().getName());
       } else {
@@ -204,6 +201,9 @@ public class HTTPServer extends AbstractService {
         } catch (Exception ex) {
           logger.error("Unexpected exception when close channel", ex);
         }
+      }
+      if (cause instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
       }
     }
 

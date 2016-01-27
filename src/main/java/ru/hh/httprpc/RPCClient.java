@@ -177,9 +177,6 @@ public class RPCClient extends AbstractService {
           return;
         }
         Throwable cause = event.getCause();
-        if (cause instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
-        }
         if (future.isCancelled() && cause instanceof ClosedChannelException) {
           LOGGER.debug("attempt to use closed channel after cancelling request", cause);
         } else {
@@ -194,6 +191,9 @@ public class RPCClient extends AbstractService {
           } catch (Exception ex) {
             LOGGER.error("Unexpected exception when close channel", ex);
           }
+        }
+        if (cause instanceof InterruptedException) {
+          Thread.currentThread().interrupt();
         }
       }
     }
