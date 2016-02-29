@@ -132,8 +132,10 @@ public class HTTPServer extends AbstractService {
               new SimpleChannelUpstreamHandler() {
                 @Override
                 public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+                  String errorMessage = "httprpc configured to handle not more than " + builder.concurrentRequestsLimit + " concurrent requests";
+                  logger.error(errorMessage);
                   Http.response(SERVICE_UNAVAILABLE)
-                      .containing("httprpc configured to handle not more than " + builder.concurrentRequestsLimit + " concurrent requests")
+                      .containing(errorMessage)
                       .sendAndClose(e.getChannel());
                 }
               },
