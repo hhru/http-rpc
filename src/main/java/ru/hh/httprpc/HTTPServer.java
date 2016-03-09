@@ -2,6 +2,8 @@ package ru.hh.httprpc;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
+
+import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
 import static java.util.concurrent.Executors.newCachedThreadPool;
@@ -194,6 +196,9 @@ public class HTTPServer extends AbstractService {
       Throwable cause = event.getCause();
       if (ClosedChannelException.class.isInstance(cause)) {
         logger.debug("Got " + cause.getClass().getName());
+      } else if (IOException.class.isInstance(cause)) {
+        logger.error("Unexpected IOexception  ", cause);
+        event.getChannel().close();
       } else {
         logger.error("Unexpected exception ", cause);
         try {
