@@ -109,6 +109,10 @@ public class Http {
       if (close) {
         f.addListener(CLOSE);
       }
+      if (message instanceof HttpResponse) {
+        ChannelContextData contextData = (ChannelContextData) channel.getAttachment();
+        contextData.setResponse((HttpResponse) message);
+      }
       return f;
     }
   }

@@ -65,10 +65,11 @@ public class RPCHandler extends HttpHandler {
         return;
       }
 
+      String requestId = request.headers().get(HttpRpcNames.REQUEST_ID_HEADER_NAME);
       final ListenableFuture<ChannelBuffer> methodFuture = descriptor.call(
           new Envelope(
               url.optionalSingleLong(TIMEOUT, Envelope.DEFAULT_TIMEOUT),
-              url.optionalSingleString(REQUEST_ID, Envelope.DEFAULT_REQUESTID)
+              url.optionalSingleString(REQUEST_ID, requestId == null ? Envelope.DEFAULT_REQUESTID: requestId)
           ),
           request.getContent()
       );

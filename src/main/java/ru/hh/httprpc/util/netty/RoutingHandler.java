@@ -10,6 +10,8 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import ru.hh.httprpc.HTTPServer;
+
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 
 @Sharable
@@ -22,6 +24,8 @@ public class RoutingHandler extends SimpleChannelUpstreamHandler {
 
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
     HttpRequest request = (HttpRequest) e.getMessage();
+    ChannelContextData contextData = (ChannelContextData) e.getChannel().getAttachment();
+    contextData.setRequest(request);
     String uri = request.getUri();
 
     for (Map.Entry<String, ChannelHandler> route : routes.entrySet()) {

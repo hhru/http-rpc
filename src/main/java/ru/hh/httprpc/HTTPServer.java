@@ -18,10 +18,13 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
@@ -31,10 +34,12 @@ import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.httprpc.util.netty.ChannelContextData;
 import ru.hh.httprpc.util.netty.Http;
 
 public class HTTPServer extends AbstractService {
   private static final Logger logger = LoggerFactory.getLogger(HTTPServer.class);
+  private static final Logger requestsLogger = LoggerFactory.getLogger("requests");
 
   private static final int DEFAULT_NETWORK_TIMEOUT_MILLIS = 1000;
 
@@ -103,7 +108,7 @@ public class HTTPServer extends AbstractService {
   }
 
   /**
-   * @param ioThreads the maximum number of I/O worker threads
+   * @param ioThreads               the maximum number of I/O worker threads
    * @param concurrentRequestsLimit the maximum number of open connections for the server
    * @deprecated use HTTPServer(Builder builder) and setters
    */
@@ -131,9 +136,12 @@ public class HTTPServer extends AbstractService {
           );
         } else {
           return Channels.pipeline(
+              channelTracker,
               new SimpleChannelUpstreamHandler() {
                 @Override
-                public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+                public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+                  ChannelContextData contextData = (ChannelContextData) e.getChannel().getAttachment();
+                  contextData.setRequest((HttpRequest) e.getMessage());
                   String errorMessage = "httprpc configured to handle not more than " + builder.concurrentRequestsLimit + " concurrent requests";
                   logger.error(errorMessage);
                   Http.response(SERVICE_UNAVAILABLE)
@@ -147,7 +155,7 @@ public class HTTPServer extends AbstractService {
       }
     });
   }
-  
+
   public InetSocketAddress getLocalAddress() {
     return InetSocketAddress.createFromJavaInetSocketAddress((java.net.InetSocketAddress) serverChannel.getLocalAddress());
   }
@@ -159,7 +167,7 @@ public class HTTPServer extends AbstractService {
       serverChannel = bootstrap.bind();
       logger.debug("started");
       notifyStarted();
-    } catch (RuntimeException e){
+    } catch (RuntimeException e) {
       logger.error("can't start", e);
       notifyFailed(e);
       throw e;
@@ -182,17 +190,13 @@ public class HTTPServer extends AbstractService {
       throw e;
     }
   }
-  
+
   @ChannelHandler.Sharable
   private static class ChannelTracker extends SimpleChannelUpstreamHandler {
     private final ChannelGroup group = new DefaultChannelGroup();
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) throws Exception {
-      if (event == null) {
-        logger.warn("exception event is null");
-        return;
-      }
       Throwable cause = event.getCause();
       if (ClosedChannelException.class.isInstance(cause)) {
         logger.debug("Got " + cause.getClass().getName());
@@ -201,28 +205,45 @@ public class HTTPServer extends AbstractService {
         event.getChannel().close();
       } else {
         logger.error("Unexpected exception ", cause);
-        try {
-          Http.response(INTERNAL_SERVER_ERROR).
-              containing(cause).
-              sendAndClose(event.getChannel());
-        } catch (Exception ex) {
-          logger.error("Unexpected exception when close channel", ex);
-        }
-      }
-      if (cause instanceof InterruptedException) {
-        Thread.currentThread().interrupt();
+        Http.response(INTERNAL_SERVER_ERROR)
+            .containing(cause)
+            .sendAndClose(event.getChannel());
       }
     }
 
     @Override
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+      Channel channel = e.getChannel();
+      channel.setAttachment(new ChannelContextData(channel));
       group.add(e.getChannel());
-      ctx.sendUpstream(e);
+      super.channelOpen(ctx, e);
     } // Todo: better handling for channels opened after calling waitUntilClosed()
+
+    @Override
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+      log((ChannelContextData) e.getChannel().getAttachment());
+      super.channelClosed(ctx, e);
+    }
 
     public void waitForChildren() {
       for (Channel channel : group)
         channel.getCloseFuture().awaitUninterruptibly();
+    }
+
+    private void log(ChannelContextData contextData) {
+      HttpRequest request = contextData.getRequest();
+      HttpResponse response = contextData.getResponse();
+      String requestId = request.headers().get(HttpRpcNames.REQUEST_ID_HEADER_NAME);
+      String message = String.format("%s %s %s %3d ms %s %s %s",
+          contextData.getRemoteAddress(),
+          requestId == null ? "noRequestId" : requestId,
+          response == null ? 0 : response.getStatus().getCode(),
+          contextData.getLifetime(),
+          request.getProtocolVersion(),
+          request.getMethod(),
+          request.getUri()
+      );
+      requestsLogger.info(message);
     }
   }
 }

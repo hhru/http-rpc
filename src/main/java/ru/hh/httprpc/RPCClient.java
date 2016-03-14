@@ -126,6 +126,7 @@ public class RPCClient extends AbstractService {
                     param(HttpRpcNames.REQUEST_ID, envelope.requestId)
             ).
                 host(address.getHostHttpHeaderValue()).
+                header(HttpRpcNames.REQUEST_ID_HEADER_NAME, envelope.requestId).
                 containing(serializer.getContentType(), encoder.apply(input)).
                 sendTo(channel);
           } else {
@@ -172,10 +173,6 @@ public class RPCClient extends AbstractService {
 
       @Override
       public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) throws Exception {
-        if (event == null) {
-          LOGGER.warn("exception event is null");
-          return;
-        }
         Throwable cause = event.getCause();
         if (future.isCancelled() && cause instanceof ClosedChannelException) {
           LOGGER.debug("attempt to use closed channel after cancelling request", cause);
@@ -186,14 +183,7 @@ public class RPCClient extends AbstractService {
                 String.format("failed to set exception for future, cancelled: %b, done: %b", future.isCancelled(), future.isDone()),
                 cause);
           }
-          try {
-            event.getChannel().close();
-          } catch (Exception ex) {
-            LOGGER.error("Unexpected exception when close channel", ex);
-          }
-        }
-        if (cause instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
+          event.getChannel().close();
         }
       }
     }

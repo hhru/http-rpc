@@ -10,6 +10,8 @@ public abstract class HttpHandler extends SimpleChannelUpstreamHandler {
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
     Channel channel = e.getChannel();
     HttpRequest request = (HttpRequest) e.getMessage();
+    ChannelContextData contextData = (ChannelContextData) channel.getAttachment();
+    contextData.setRequest(request);
     Http.UrlDecoder url = new Http.UrlDecoder(request.getUri());
 
     requestReceived(channel, request, url);
