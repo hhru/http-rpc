@@ -108,7 +108,7 @@ public class HTTPServer extends AbstractService {
   }
 
   /**
-   * @param ioThreads               the maximum number of I/O worker threads
+   * @param ioThreads the maximum number of I/O worker threads
    * @param concurrentRequestsLimit the maximum number of open connections for the server
    * @deprecated use HTTPServer(Builder builder) and setters
    */

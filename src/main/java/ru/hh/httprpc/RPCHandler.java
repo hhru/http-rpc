@@ -69,7 +69,7 @@ public class RPCHandler extends HttpHandler {
       final ListenableFuture<ChannelBuffer> methodFuture = descriptor.call(
           new Envelope(
               url.optionalSingleLong(TIMEOUT, Envelope.DEFAULT_TIMEOUT),
-              url.optionalSingleString(REQUEST_ID, requestId == null ? Envelope.DEFAULT_REQUESTID: requestId)
+              requestId == null ? url.optionalSingleString(REQUEST_ID, Envelope.DEFAULT_REQUESTID) : requestId
           ),
           request.getContent()
       );

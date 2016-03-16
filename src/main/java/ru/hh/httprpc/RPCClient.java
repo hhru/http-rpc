@@ -123,7 +123,7 @@ public class RPCClient extends AbstractService {
                 HttpMethod.POST,
                 Http.url(fullPath).
                     param(HttpRpcNames.TIMEOUT, envelope.timeoutMillis).
-                    param(HttpRpcNames.REQUEST_ID, envelope.requestId)
+                    param(HttpRpcNames.REQUEST_ID, envelope.requestId) //TODO: remove REQUEST_ID get param from url
             ).
                 host(address.getHostHttpHeaderValue()).
                 header(HttpRpcNames.REQUEST_ID_HEADER_NAME, envelope.requestId).
