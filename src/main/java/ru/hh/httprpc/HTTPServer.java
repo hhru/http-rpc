@@ -141,7 +141,10 @@ public class HTTPServer extends AbstractService {
                 @Override
                 public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
                   ChannelContextData contextData = (ChannelContextData) e.getChannel().getAttachment();
-                  contextData.setRequest((HttpRequest) e.getMessage());
+                  Object message = e.getMessage();
+                  if (message instanceof HttpRequest) {
+                    contextData.setRequest((HttpRequest) message);
+                  }
                   String errorMessage = "httprpc configured to handle not more than " + builder.concurrentRequestsLimit + " concurrent requests";
                   logger.error(errorMessage);
                   Http.response(SERVICE_UNAVAILABLE)
@@ -233,16 +236,27 @@ public class HTTPServer extends AbstractService {
     private void log(ChannelContextData contextData) {
       HttpRequest request = contextData.getRequest();
       HttpResponse response = contextData.getResponse();
-      String requestId = request.headers().get(HttpRpcNames.REQUEST_ID_HEADER_NAME);
-      String message = String.format("%s %s %s %3d ms %s %s %s",
-          contextData.getRemoteAddress(),
-          requestId == null ? "noRequestId" : requestId,
-          response == null ? 0 : response.getStatus().getCode(),
-          contextData.getLifetime(),
-          request.getProtocolVersion(),
-          request.getMethod(),
-          request.getUri()
-      );
+      int statusCode = response == null ? 0 : response.getStatus().getCode();
+      final String message;
+      if (request == null) {
+        message = String.format("%s %s %s %3d ms",
+            contextData.getRemoteAddress(),
+            "noRequestId",
+            statusCode,
+            contextData.getLifetime()
+        );
+      } else {
+        String requestId = request.headers().get(HttpRpcNames.REQUEST_ID_HEADER_NAME);
+        message = String.format("%s %s %s %3d ms %s %s %s",
+            contextData.getRemoteAddress(),
+            requestId == null ? "noRequestId" : requestId,
+            statusCode,
+            contextData.getLifetime(),
+            request.getProtocolVersion(),
+            request.getMethod(),
+            request.getUri()
+        );
+      }
       requestsLogger.info(message);
     }
   }
