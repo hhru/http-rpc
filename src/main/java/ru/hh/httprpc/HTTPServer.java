@@ -1,6 +1,7 @@
 package ru.hh.httprpc;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractService;
 
 import java.io.IOException;
@@ -8,6 +9,8 @@ import java.nio.channels.ClosedChannelException;
 
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -201,11 +204,16 @@ public class HTTPServer extends AbstractService {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) throws Exception {
       Throwable cause = event.getCause();
+      Throwable rootCause = Throwables.getRootCause(cause);
       if (ClosedChannelException.class.isInstance(cause)) {
         logger.debug("Got " + cause.getClass().getName());
       } else if (IOException.class.isInstance(cause)) {
         logger.error("Unexpected IOexception  ", cause);
         event.getChannel().close();
+      } else if (rootCause instanceof TimeoutException) {
+        Http.response(SERVICE_UNAVAILABLE)
+            .containing(rootCause)
+            .sendAndClose(event.getChannel());
       } else {
         logger.error("Unexpected exception ", cause);
         Http.response(INTERNAL_SERVER_ERROR)
