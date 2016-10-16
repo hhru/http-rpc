@@ -32,6 +32,7 @@ public class RoutingHandler extends SimpleChannelUpstreamHandler {
       String prefix = route.getKey();
       if (uri.startsWith(prefix)) {
         request.setUri(uri.substring(prefix.length())); // Substract matched URI prefix
+        contextData.setBaseUrl(prefix);
         ctx.getPipeline().addLast(prefix, route.getValue());
         ctx.sendUpstream(e);
         return;

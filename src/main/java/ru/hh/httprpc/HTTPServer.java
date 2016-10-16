@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.httprpc.util.netty.ChannelContextData;
 import ru.hh.httprpc.util.netty.Http;
+import ru.hh.httprpc.util.netty.RoutingHandler;
 
 public class HTTPServer extends AbstractService {
   private static final Logger logger = LoggerFactory.getLogger(HTTPServer.class);
@@ -262,7 +263,7 @@ public class HTTPServer extends AbstractService {
             contextData.getLifetime(),
             request.getProtocolVersion(),
             request.getMethod(),
-            request.getUri()
+            contextData.getBaseUrl() + request.getUri()
         );
       }
       requestsLogger.info(message);

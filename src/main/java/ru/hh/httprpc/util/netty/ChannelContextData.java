@@ -15,10 +15,12 @@ public class ChannelContextData {
 
   private HttpRequest request;
   private HttpResponse response;
+  private String baseUrl;
 
   public ChannelContextData(Channel channel) {
     this.channel = channel;
     startTimeMillis = currentTimeMillis();
+    baseUrl = "";
   }
 
   public HttpRequest getRequest() {
@@ -43,5 +45,13 @@ public class ChannelContextData {
 
   public InetAddress getRemoteAddress() {
     return ((InetSocketAddress) channel.getRemoteAddress()).getAddress();
+  }
+
+  public String getBaseUrl() {
+    return baseUrl;
+  }
+
+  public void setBaseUrl(String baseUrl) {
+    this.baseUrl = baseUrl;
   }
 }
