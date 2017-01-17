@@ -39,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.httprpc.util.netty.ChannelContextData;
 import ru.hh.httprpc.util.netty.Http;
-import ru.hh.httprpc.util.netty.RoutingHandler;
 
 public class HTTPServer extends AbstractService {
   private static final Logger logger = LoggerFactory.getLogger(HTTPServer.class);
@@ -256,12 +255,11 @@ public class HTTPServer extends AbstractService {
         );
       } else {
         String requestId = request.headers().get(HttpRpcNames.REQUEST_ID_HEADER_NAME);
-        message = String.format("%s %s %s %3d ms %s %s %s",
+        message = String.format("%s %s %s %3d ms %s %s",
             contextData.getRemoteAddress(),
             requestId == null ? "noRequestId" : requestId,
             statusCode,
             contextData.getLifetime(),
-            request.getProtocolVersion(),
             request.getMethod(),
             contextData.getBaseUrl() + request.getUri()
         );
