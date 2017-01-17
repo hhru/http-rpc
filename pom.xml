@@ -10,13 +10,13 @@
   <name>Netty RPC Implementation over HTTP</name>
   <groupId>ru.hh.http-rpc</groupId>
   <artifactId>http-rpc</artifactId>
-  <version>1.32-SNAPSHOT</version>
+  <version>1.32</version>
   <packaging>jar</packaging>
 
   <scm>
     <connection>scm:git:git@github.com:hhru/http-rpc.git</connection>
     <developerConnection>scm:git:git@github.com:hhru/http-rpc.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>http-rpc-1.32</tag>
   </scm>
 
   <build>
