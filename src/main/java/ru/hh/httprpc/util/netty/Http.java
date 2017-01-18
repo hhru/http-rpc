@@ -49,7 +49,6 @@ public class Http {
 
     protected HttpMessageBuilder(MESSAGE message) {
       this.message = message;
-      HttpHeaders.setKeepAlive(message, false);
     }
 
     public SELF host(String hostName) {
@@ -61,6 +60,11 @@ public class Http {
     public SELF header(String name, Object value) {
       message.headers().set(name, value);
 
+      return self;
+    }
+
+    public SELF setKeepAlive(boolean keepAlive) {
+      HttpHeaders.setKeepAlive(message, keepAlive);
       return self;
     }
 

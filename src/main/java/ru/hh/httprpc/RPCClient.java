@@ -45,10 +45,16 @@ public class RPCClient extends AbstractService {
   private final ClientBootstrap bootstrap;
   private final ChannelGroup allChannels = new DefaultChannelGroup();
   private final Serializer serializer;
+  private final boolean httpKeepAlive;
 
   public RPCClient(TcpOptions options, String basePath, int ioThreads, Serializer serializer) {
+    this(options, basePath, ioThreads, serializer, false);
+  }
+
+  public RPCClient(TcpOptions options, String basePath, int ioThreads, Serializer serializer, boolean httpKeepAlive) {
     this.basePath = basePath;
     this.serializer = serializer;
+    this.httpKeepAlive = httpKeepAlive;
     ChannelFactory factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads);
     bootstrap = new ClientBootstrap(factory);
     bootstrap.setOptions(options.toMap());
@@ -127,6 +133,7 @@ public class RPCClient extends AbstractService {
             ).
                 host(address.getHostHttpHeaderValue()).
                 header(HttpRpcNames.REQUEST_ID_HEADER_NAME, envelope.requestId).
+                setKeepAlive(httpKeepAlive).
                 containing(serializer.getContentType(), encoder.apply(input)).
                 sendTo(channel);
           } else {
