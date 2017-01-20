@@ -123,7 +123,9 @@ public class RPCClient extends AbstractService {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
           if (future.isSuccess()) {
-            channel.getPipeline().addFirst(ReadTimeoutHandler.class.getSimpleName(), new ReadTimeoutHandler(timer, envelope.timeoutMillis, TimeUnit.MILLISECONDS));
+            if (!httpKeepAlive) {
+              channel.getPipeline().addFirst(ReadTimeoutHandler.class.getSimpleName(), new ReadTimeoutHandler(timer, envelope.timeoutMillis, TimeUnit.MILLISECONDS));
+            }
             channel.getPipeline().addLast("handler", new ClientHandler(clientFuture));
             Http.request(
                 HttpMethod.POST,
