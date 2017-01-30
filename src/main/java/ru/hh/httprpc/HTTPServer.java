@@ -13,6 +13,8 @@ import java.util.concurrent.TimeoutException;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelDownstreamHandler;
+import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -20,14 +22,15 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.DownstreamMessageEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
@@ -135,7 +138,8 @@ public class HTTPServer extends AbstractService {
               new HttpServerCodec(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE),
               idleHandler.startProcessing(), // after decoding http request (upstream) we're in a processing phase
               // todo: exception handler
-              builder.handler
+              builder.handler,
+              new ResponseLogger()
           );
         } else {
           return Channels.pipeline(
@@ -155,7 +159,8 @@ public class HTTPServer extends AbstractService {
                       .sendAndClose(e.getChannel());
                 }
               },
-              new HttpResponseEncoder()
+              new HttpResponseEncoder(),
+              new ResponseLogger()
           );
         }
       }
@@ -230,38 +235,46 @@ public class HTTPServer extends AbstractService {
       super.channelOpen(ctx, e);
     } // Todo: better handling for channels opened after calling waitUntilClosed()
 
-    @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-      log((ChannelContextData) e.getChannel().getAttachment());
-      super.channelClosed(ctx, e);
-    }
-
     public void waitForChildren() {
       for (Channel channel : group)
         channel.getCloseFuture().awaitUninterruptibly();
     }
 
-    private void log(ChannelContextData contextData) {
+  }
+
+  @ChannelHandler.Sharable
+  private static class ResponseLogger implements ChannelDownstreamHandler {
+    @Override
+    public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
+      if ((e instanceof DownstreamMessageEvent) && (((DownstreamMessageEvent) e).getMessage() instanceof DefaultHttpResponse)) {
+        DefaultHttpResponse response = (DefaultHttpResponse) ((DownstreamMessageEvent) e).getMessage();
+        ChannelContextData contextData = (ChannelContextData) e.getChannel().getAttachment();
+        log(contextData, response);
+      }
+
+      ctx.sendDownstream(e);
+    }
+
+    private void log(ChannelContextData contextData, DefaultHttpResponse response) {
       HttpRequest request = contextData.getRequest();
-      HttpResponse response = contextData.getResponse();
-      int statusCode = response == null ? 0 : response.getStatus().getCode();
+      int statusCode = response.getStatus().getCode();
       final String message;
       if (request == null) {
         message = String.format("%s %s %s %3d ms",
-            contextData.getRemoteAddress(),
-            "noRequestId",
-            statusCode,
-            contextData.getLifetime()
+                contextData.getRemoteAddress(),
+                "noRequestId",
+                statusCode,
+                contextData.getLifetime()
         );
       } else {
         String requestId = request.headers().get(HttpRpcNames.REQUEST_ID_HEADER_NAME);
         message = String.format("%s %s %s %3d ms %s %s",
-            contextData.getRemoteAddress(),
-            requestId == null ? "noRequestId" : requestId,
-            statusCode,
-            contextData.getLifetime(),
-            request.getMethod(),
-            contextData.getBaseUrl() + request.getUri()
+                contextData.getRemoteAddress(),
+                requestId == null ? "noRequestId" : requestId,
+                statusCode,
+                contextData.getLifetime(),
+                request.getMethod(),
+                contextData.getBaseUrl() + request.getUri()
         );
       }
       requestsLogger.info(message);
